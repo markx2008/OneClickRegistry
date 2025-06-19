@@ -1,0 +1,34 @@
+name: Create and Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Prepare project directory
+      run: |
+        mkdir -p OneClickRegistry
+        cp -r docker-compose.yml start.sh traefik/ OneClickRegistry/
+
+    - name: Compress project files
+      run: |
+        tar -czvf OneClickRegistry.tar.gz OneClickRegistry/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        files: OneClickRegistry.tar.gz
