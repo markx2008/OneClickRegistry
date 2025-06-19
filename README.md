@@ -137,11 +137,11 @@ chmod +x start.sh
 ## 操作步驟
 
 1. **下載專案原始碼**
-    使用以下指令下載專案壓縮檔案並解壓縮：
+    使用以下指令下載最新版本的專案壓縮檔案並解壓縮：
     ```bash
-    wget https://github.com/<your-repo-owner>/<your-repo-name>/archive/refs/tags/v1.0.0.tar.gz
-    tar -xzvf v1.0.0.tar.gz
-    cd <your-repo-name>-1.0.0
+    wget https://github.com/mark2008/OneClickRegistry/releases/latest/download/OneClickRegistry.tar.gz
+    tar -xzvf OneClickRegistry.tar.gz
+    cd OneClickRegistry
     ```
 
 2. **設定環境變數**
