@@ -137,9 +137,11 @@ chmod +x start.sh
 ## 操作步驟
 
 1. **下載專案原始碼**
+    使用以下指令下載專案壓縮檔案並解壓縮：
     ```bash
-    git clone <你的-repo-url>
-    cd <repo-folder>
+    wget https://github.com/<your-repo-owner>/<your-repo-name>/archive/refs/tags/v1.0.0.tar.gz
+    tar -xzvf v1.0.0.tar.gz
+    cd <your-repo-name>-1.0.0
     ```
 
 2. **設定環境變數**
