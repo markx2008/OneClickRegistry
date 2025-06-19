@@ -41,20 +41,32 @@ echo "Registry Domain: $REGISTRY_DOMAIN"
 echo "Registry UI Domain: $REGISTRY_UI_DOMAIN"
 echo "Registry Username: $REGISTRY_USER"
 
+# === 【新增步驟】3. 產生 .env 環境變數檔案 ===
+log_info "Creating .env file for Docker Compose..."
+{
+    echo "REGISTRY_DOMAIN=${REGISTRY_DOMAIN}"
+    echo "REGISTRY_UI_DOMAIN=${REGISTRY_UI_DOMAIN}"
+    # 為 Traefik 和 UI 設定預設值，這些值通常不需要修改
+    echo "TRAEFIK_WEB_PORT=8080"
+    echo "TRAEFIK_API_PORT=8081"
+    echo "TRAEFIK_DASHBOARD_DOMAIN=traefik.${REGISTRY_DOMAIN}"
+    echo "REGISTRY_UI_TITLE=My Private Registry"
+    echo "REGISTRY_UI_INTERNAL_PORT=80"
+} > ./.env
+log_info ".env file created successfully."
+# =================================================
+
 # 4. 建立必要的目錄
 log_info "Creating required directories..."
 mkdir -p ./registry/data
 mkdir -p ./registry/auth
 mkdir -p ./traefik
 
-# 5. 產生 htpasswd 檔案 (使用內建 openssl，相容性更高)
+# 5. 產生 htpasswd 檔案 (使用內建 openssl)
 log_info "Generating htpasswd file for user: $REGISTRY_USER using openssl"
-# 產生一個隨機的 salt (鹽)，這是 APR1 格式所需要的
 SALT=$(openssl rand -base64 6)
-# 使用 openssl 產生 APR1 格式的密碼雜湊
 PASSWORD_HASH=$(openssl passwd -1 -salt "$SALT" "$REGISTRY_PASSWORD")
 if [ $? -eq 0 ] && [ -n "$PASSWORD_HASH" ]; then
-    # 將使用者名稱和密碼雜湊寫入檔案
     echo "$REGISTRY_USER:$PASSWORD_HASH" > ./registry/auth/htpasswd
     log_info "htpasswd file created successfully."
 else
@@ -64,18 +76,19 @@ fi
 
 # 6. 啟動服務
 log_info "Starting all services with Docker Compose..."
-# 加上 sudo 以確保有權限操作 docker.sock
 sudo docker-compose up -d
 
 if [ $? -eq 0 ]; then
     log_info "All services started successfully!"
     echo "-----------------------------------------------------"
     log_info "Next Steps:"
-    echo "1. Set up your reverse proxy (e.g., Cloudflare Tunnel) to point to your NAS."
+    echo "1. Set up your reverse proxy."
+    echo "   - Point ${GREEN}${REGISTRY_DOMAIN}${NC} to http://<your-nas-ip>:8080"
+    echo "   - Point ${GREEN}${REGISTRY_UI_DOMAIN}${NC} to http://<your-nas-ip>:8080"
+    echo "   - Point ${GREEN}traefik.${REGISTRY_DOMAIN}${NC} to http://<your-nas-ip>:8081 for dashboard"
     echo "2. Access your UI at: ${GREEN}https://${REGISTRY_UI_DOMAIN}${NC}"
-    echo "3. To login to your registry from your local machine, run:"
+    echo "3. To login to your registry, run:"
     echo "   ${YELLOW}docker login ${REGISTRY_DOMAIN}${NC}"
-    echo "   (Username: ${REGISTRY_USER}, Password: [the one you entered])"
     echo "-----------------------------------------------------"
 else
     log_error "There was an error starting the services. Please check the logs using 'sudo docker-compose logs'."
