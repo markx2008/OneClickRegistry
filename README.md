@@ -62,9 +62,9 @@ nano .env
 
 ---
 
-### 2. 跳過產生 Registry 帳號密碼檔
+### 2. 自動產生 Registry 帳號密碼檔
 
-現在腳本會自動產生 Registry 帳號密碼檔，無需手動執行 `htpasswd` 指令。
+腳本現在使用 Docker 容器自動生成 Registry 帳號密碼檔，無需手動安裝 `htpasswd` 工具。
 ---
 
 ### 3. 啟動所有服務

@@ -41,26 +41,6 @@ echo "Registry Domain: $REGISTRY_DOMAIN"
 echo "Registry UI Domain: $REGISTRY_UI_DOMAIN"
 echo "Registry Username: $REGISTRY_USER"
 
-# 3. 檢查 htpasswd 工具是否存在
-if ! command -v htpasswd &> /dev/null; then
-    log_warn "htpasswd command not found. Attempting to install it..."
-    if [ -f /etc/debian_version ]; then
-        sudo apt-get update && sudo apt-get install -y apache2-utils
-    elif [ -f /etc/redhat-release ]; then
-        sudo yum install -y httpd-tools
-    elif [ -f /etc/alpine-release ]; then
-        sudo apk add apache2-utils
-    else
-        log_error "Unsupported system. Please install htpasswd manually."
-        exit 1
-    fi
-
-    if ! command -v htpasswd &> /dev/null; then
-        log_error "Failed to install htpasswd. Please install it manually."
-        exit 1
-    fi
-    log_info "htpasswd installed successfully."
-fi
 
 # 4. 建立必要的目錄
 log_info "Creating required directories..."
@@ -70,7 +50,7 @@ mkdir -p ./traefik
 
 # 5. 產生 htpasswd 檔案
 log_info "Generating htpasswd file for user: $REGISTRY_USER"
-htpasswd -bc ./registry/auth/htpasswd "$REGISTRY_USER" "$REGISTRY_PASSWORD" > /dev/null 2>&1
+docker run --rm httpd:2.4 htpasswd -bc -B ./registry/auth/htpasswd "$REGISTRY_USER" "$REGISTRY_PASSWORD" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     log_error "Failed to create htpasswd file. Please check permissions or htpasswd command."
     exit 1
