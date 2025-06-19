@@ -27,47 +27,43 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
-# 2. 檢查 .env 檔案是否存在
-if [ ! -f .env ]; then
-    log_warn ".env file not found. Copying from .env.example."
-    cp .env.example .env
-    log_error "Please edit the .env file with your custom settings, then run this script again."
-    exit 1
-fi
+# 2. 互動式設定
+log_info "Starting interactive setup..."
+read -p "Enter your Registry Domain (e.g., registry.example.com): " REGISTRY_DOMAIN
+read -p "Enter your Registry UI Domain (e.g., ui.example.com): " REGISTRY_UI_DOMAIN
+read -p "Enter your Registry Username: " REGISTRY_USER
+read -s -p "Enter your Registry Password: " REGISTRY_PASSWORD
+echo ""
 
-# 3. 載入環境變數
-export $(grep -v '^#' .env | xargs)
+# 確認輸入
+log_info "Using the following settings:"
+echo "Registry Domain: $REGISTRY_DOMAIN"
+echo "Registry UI Domain: $REGISTRY_UI_DOMAIN"
+echo "Registry Username: $REGISTRY_USER"
 
-# 4. 檢查域名是否已設定
-if [[ "$REGISTRY_DOMAIN" == "registry.your-domain.com" || "$REGISTRY_UI_DOMAIN" == "ui.your-domain.com" ]]; then
-    log_error "Default domain names are still in use in the .env file."
-    log_error "Please update REGISTRY_DOMAIN and REGISTRY_UI_DOMAIN with your actual domains."
-    exit 1
-fi
-
-# 5. 檢查 htpasswd 工具是否存在
+# 3. 檢查 htpasswd 工具是否存在
 if ! command -v htpasswd &> /dev/null; then
     log_error "htpasswd command not found. It's required to generate the password file."
     log_error "Please install it. On Debian/Ubuntu: 'sudo apt-get install apache2-utils'. On CentOS/RHEL: 'sudo yum install httpd-tools'."
     exit 1
 fi
 
-# 6. 建立必要的目錄
+# 4. 建立必要的目錄
 log_info "Creating required directories..."
 mkdir -p ./registry/data
 mkdir -p ./registry/auth
 mkdir -p ./traefik
 
-# 7. 產生 htpasswd 檔案
+# 5. 產生 htpasswd 檔案
 log_info "Generating htpasswd file for user: $REGISTRY_USER"
-htpasswd -bc ./registry/auth/htpasswd "$REGISTRY_USER" "$REGISTRY_PASSWORD"
+htpasswd -bc ./registry/auth/htpasswd "$REGISTRY_USER" "$REGISTRY_PASSWORD" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     log_error "Failed to create htpasswd file. Please check permissions or htpasswd command."
     exit 1
 fi
 log_info "htpasswd file created successfully."
 
-# 8. 啟動服務
+# 6. 啟動服務
 log_info "Starting all services with Docker Compose..."
 docker-compose up -d
 
@@ -81,7 +77,7 @@ if [ $? -eq 0 ]; then
     echo "2. Access your UI at: ${GREEN}https://${REGISTRY_UI_DOMAIN}${NC}"
     echo "3. To login to your registry from your local machine, run:"
     echo "   ${YELLOW}docker login ${REGISTRY_DOMAIN}${NC}"
-    echo "   (Username: ${REGISTRY_USER}, Password: [the one in your .env file])"
+    echo "   (Username: ${REGISTRY_USER}, Password: [the one you entered])"
     echo "4. Access Traefik Dashboard at: ${GREEN}http://<your-nas-ip>:${TRAEFIK_API_PORT}${NC}"
     echo "-----------------------------------------------------"
 else
