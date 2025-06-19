@@ -48,6 +48,8 @@ if ! command -v htpasswd &> /dev/null; then
         sudo apt-get update && sudo apt-get install -y apache2-utils
     elif [ -f /etc/redhat-release ]; then
         sudo yum install -y httpd-tools
+    elif [ -f /etc/alpine-release ]; then
+        sudo apk add apache2-utils
     else
         log_error "Unsupported system. Please install htpasswd manually."
         exit 1
