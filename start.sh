@@ -50,7 +50,7 @@ mkdir -p ./traefik
 
 # 5. 產生 htpasswd 檔案
 log_info "Generating htpasswd file for user: $REGISTRY_USER"
-docker run --rm httpd:2.4 htpasswd -bc -B ./registry/auth/htpasswd "$REGISTRY_USER" "$REGISTRY_PASSWORD" > /dev/null 2>&1
+docker run --rm -v "$(pwd)/registry/auth:/auth" httpd:2.4 htpasswd -bc -B /auth/htpasswd "$REGISTRY_USER" "$REGISTRY_PASSWORD" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     log_error "Failed to create htpasswd file. Please check permissions or htpasswd command."
     exit 1
