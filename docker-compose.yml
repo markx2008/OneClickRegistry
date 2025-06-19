@@ -1,0 +1,84 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--providers.file.directory=/etc/traefik/config"
+      - "--providers.file.watch=true"
+      - "--log.level=INFO"
+    ports:
+      - "${TRAEFIK_WEB_PORT}:80"      # 供 Cloudflare Tunnel 連接
+      - "${TRAEFIK_API_PORT}:8080"    # Traefik Dashboard (可選)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/middlewares.yml:/etc/traefik/config/middlewares.yml:ro
+      - ./registry/auth:/auth:ro # 將 htpasswd 檔案掛載給 Traefik 讀取
+    networks:
+      - traefik-net
+    labels:
+      # Traefik Dashboard 的路由設定
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+
+  registry:
+    image: registry:2
+    container_name: registry
+    restart: unless-stopped
+    environment:
+      # 基礎設定
+      - REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/data
+      # 認證設定 (Registry 自身也需要知道認證方式)
+      - REGISTRY_AUTH=htpasswd
+      - REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd
+      - REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm
+      # CORS 跨域設定 (解決 UI 請求錯誤的關鍵)
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin=['https://${REGISTRY_UI_DOMAIN}']
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods=['HEAD', 'GET', 'OPTIONS', 'DELETE']
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers=['Authorization', 'Accept']
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=['true']
+    volumes:
+      - ./registry/data:/data
+      - ./registry/auth:/auth:ro # 將 htpasswd 掛載進來
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-net"
+      # Registry 的路由設定
+      - "traefik.http.routers.registry.rule=Host(`${REGISTRY_DOMAIN}`)"
+      - "traefik.http.routers.registry.entrypoints=web"
+      - "traefik.http.routers.registry.middlewares=registry-auth@file" # 啟用認證中間件
+      - "traefik.http.services.registry.loadbalancer.server.port=5000"
+
+  registry-ui:
+    image: joxit/docker-registry-ui:main
+    container_name: registry-ui
+    restart: unless-stopped
+    environment:
+      - REGISTRY_URL=https://${REGISTRY_DOMAIN} # UI 需要知道 Registry 的公開 URL
+      - REGISTRY_TITLE=${REGISTRY_UI_TITLE}
+      - DELETE_IMAGES=true
+      - NGINX_LISTEN_PORT=${REGISTRY_UI_INTERNAL_PORT} # 設定 UI 服務的內部端口
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-net"
+      # Registry UI 的路由設定
+      - "traefik.http.routers.registry-ui.rule=Host(`${REGISTRY_UI_DOMAIN}`)"
+      - "traefik.http.routers.registry-ui.entrypoints=web"
+      - "traefik.http.services.registry-ui.loadbalancer.server.port=${REGISTRY_UI_INTERNAL_PORT}"
+
+networks:
+  traefik-net:
+    driver: bridge

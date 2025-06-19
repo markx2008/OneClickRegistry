@@ -1,0 +1,12 @@
+# .gitignore
+
+# Ignore sensitive environment variables
+.env
+
+# Ignore runtime data
+/registry/data/
+/registry/auth/htpasswd
+
+# Ignore IDE and OS specific files
+.DS_Store
+.vscode/

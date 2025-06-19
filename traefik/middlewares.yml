@@ -1,0 +1,7 @@
+# traefik/middlewares.yml
+http:
+  middlewares:
+    registry-auth:
+      basicAuth:
+        usersFile: "/auth/htpasswd" # 指向掛載進來的認證檔案
+        removeHeader: true
