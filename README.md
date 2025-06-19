@@ -139,7 +139,7 @@ chmod +x start.sh
 1. **下載專案原始碼**
     使用以下指令下載最新版本的專案壓縮檔案並解壓縮：
     ```bash
-    wget https://github.com/mark2008/OneClickRegistry/releases/latest/download/OneClickRegistry.tar.gz
+    wget https://github.com/markx2008/OneClickRegistry/releases/latest/download/OneClickRegistry.tar.gz
     tar -xzvf OneClickRegistry.tar.gz
     cd OneClickRegistry
     ```

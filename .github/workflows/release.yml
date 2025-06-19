@@ -13,9 +13,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Prepare project directory
+      run: |
+        mkdir -p OneClickRegistry
+        cp -r docker-compose.yml .env.example start.sh traefik/ OneClickRegistry/
+
     - name: Compress project files
       run: |
-        tar -czvf OneClickRegistry.tar.gz docker-compose.yml .env.example start.sh traefik/
+        tar -czvf OneClickRegistry.tar.gz OneClickRegistry/
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
