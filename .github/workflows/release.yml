@@ -25,7 +25,7 @@ jobs:
 
     - name: Compress project files
       run: |
-        tar -czvf OneClickRegistry.tar.gz docker-compose.yml .env.example start.sh traefik/
+        tar -czvf OneClickRegistry-${{ github.run_id }}.tar.gz docker-compose.yml .env.example start.sh traefik/
 
     - name: Create or Update Release
       id: create_release
@@ -43,6 +43,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: OneClickRegistry.tar.gz
-        asset_name: OneClickRegistry.tar.gz
+        asset_path: OneClickRegistry-${{ github.run_id }}.tar.gz
+        asset_name: OneClickRegistry-${{ github.run_id }}.tar.gz
         asset_content_type: application/gzip
