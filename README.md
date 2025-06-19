@@ -62,15 +62,9 @@ nano .env
 
 ---
 
-### 2. 產生 Registry 帳號密碼檔
+### 2. 跳過產生 Registry 帳號密碼檔
 
-請先安裝 `apache2-utils`（或 `httpd-tools`），然後執行：
-
-```bash
-htpasswd -Bbn <你的帳號> <你的密碼> > registry/auth/htpasswd
-```
-> 例如：`htpasswd -Bbn myuser mypassword > registry/auth/htpasswd`
-
+現在腳本會自動產生 Registry 帳號密碼檔，無需手動執行 `htpasswd` 指令。
 ---
 
 ### 3. 啟動所有服務
@@ -144,13 +138,8 @@ chmod +x start.sh
     cd OneClickRegistry
     ```
 
-2. **設定環境變數**
-    複製範本檔並依需求修改內容。
-    ```bash
-    cp .env.example .env
-    nano .env
-    ```
-    **請務必修改 `REGISTRY_DOMAIN`、`REGISTRY_UI_DOMAIN` 與 `REGISTRY_PASSWORD`！**
+2. **跳過設定環境變數**
+    現在已改為互動式設定，執行腳本時會提示輸入必要的參數，無需手動修改 `.env` 檔案。
 
 3. **執行啟動腳本**
     此腳本會建立必要檔案並啟動所有服務。

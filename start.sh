@@ -43,9 +43,21 @@ echo "Registry Username: $REGISTRY_USER"
 
 # 3. 檢查 htpasswd 工具是否存在
 if ! command -v htpasswd &> /dev/null; then
-    log_error "htpasswd command not found. It's required to generate the password file."
-    log_error "Please install it. On Debian/Ubuntu: 'sudo apt-get install apache2-utils'. On CentOS/RHEL: 'sudo yum install httpd-tools'."
-    exit 1
+    log_warn "htpasswd command not found. Attempting to install it..."
+    if [ -f /etc/debian_version ]; then
+        sudo apt-get update && sudo apt-get install -y apache2-utils
+    elif [ -f /etc/redhat-release ]; then
+        sudo yum install -y httpd-tools
+    else
+        log_error "Unsupported system. Please install htpasswd manually."
+        exit 1
+    fi
+
+    if ! command -v htpasswd &> /dev/null; then
+        log_error "Failed to install htpasswd. Please install it manually."
+        exit 1
+    fi
+    log_info "htpasswd installed successfully."
 fi
 
 # 4. 建立必要的目錄
