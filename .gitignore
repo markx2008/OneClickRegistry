@@ -1,12 +1,23 @@
-# .gitignore
-
-# Ignore sensitive environment variables
+# Environment variables - Contains sensitive keys
 .env
 
-# Ignore runtime data
-/registry/data/
-/registry/auth/htpasswd
+# TLS certificates - User-specific and should not be versioned
+/registry/certs/*
+!/registry/certs/.gitkeep
 
-# Ignore IDE and OS specific files
+# Tailscale state - User-specific
+/ts-state/
+
+# Let's Encrypt certificates - Not used in this setup
+/letsencrypt/
+
+# Traefik config - Old/unused
+/traefik/config/
+
+# Log files
+*.log
+
+# OS-specific files
 .DS_Store
-.vscode/
+Thumbs.db
+.vs/
