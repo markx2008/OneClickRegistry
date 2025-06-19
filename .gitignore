@@ -10,3 +10,4 @@
 # Ignore IDE and OS specific files
 .DS_Store
 .vscode/
+.vs/

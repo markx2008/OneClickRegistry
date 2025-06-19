@@ -11,6 +11,22 @@
 
 ---
 
+## 架構關係圖
+
+```mermaid
+graph TD
+    A[外部用戶端/CI<br>（如 GitHub Actions）]
+    B[Traefik<br>（反向代理）]
+    C[Docker Registry]
+    D[Registry UI]
+    E[Traefik Dashboard]
+
+    A -- REGISTRY_DOMAIN 請求 --> B
+    A -- REGISTRY_UI_DOMAIN 請求 --> B
+    B -- 反向代理/驗證 --> C
+    B -- 反向代理 --> D
+    B -- 內部管理 --> E
+```
 ## 📁 專案結構
 
 ```
