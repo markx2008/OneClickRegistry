@@ -13,26 +13,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v2
-
-    - name: Check if Release already exists
-      id: check_release
-      run: |
-        if gh release view ${{ github.ref_name }}; then
-          echo "Release already exists. Skipping asset upload." && exit 0
-        fi
-
     - name: Compress project files
       run: |
         tar -czvf OneClickRegistry.tar.gz docker-compose.yml .env.example start.sh traefik/
 
-    - name: Create or Update Release
-      id: create_release
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
         files: OneClickRegistry.tar.gz
