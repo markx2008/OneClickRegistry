@@ -26,6 +26,14 @@ echo ""
 read -p "Enter your Traefik Dashboard Domain (default: traefik.${REGISTRY_DOMAIN}): " TRAEFIK_DASHBOARD_DOMAIN
 TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN:-traefik.${REGISTRY_DOMAIN}}
 
+# 2.2 互動式輸入 Basic Auth 帳號密碼
+read -p "Enter UI/Dashboard Basic Auth Username (default: admin): " BASIC_AUTH_USER
+BASIC_AUTH_USER=${BASIC_AUTH_USER:-admin}
+read -p "Enter UI/Dashboard Basic Auth Password (default: random 8 chars): " BASIC_AUTH_PASS
+if [ -z "$BASIC_AUTH_PASS" ]; then
+    BASIC_AUTH_PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
+fi
+
 # 3. 產生 .env 環境變數檔案
 log_info "Creating .env file for Docker Compose..."
 {
@@ -47,13 +55,21 @@ mkdir -p ./registry/data
 mkdir -p ./registry/auth
 mkdir -p ./traefik/config
 
+# 產生 Basic Auth hash
+BASIC_AUTH_HASH=$(openssl passwd -apr1 "$BASIC_AUTH_PASS")
+
 # 建立 Traefik 中間件設定檔
 cat <<EOF > ./traefik/config/middlewares.yml
 http:
   middlewares:
-    registry-auth:
+    registry-ui-auth:
       basicAuth:
-        usersFile: /auth/htpasswd
+        users:
+          - "$BASIC_AUTH_USER:$BASIC_AUTH_HASH"
+    traefik-dashboard-auth:
+      basicAuth:
+        users:
+          - "$BASIC_AUTH_USER:$BASIC_AUTH_HASH"
 EOF
 log_info "Traefik middleware config created."
 
@@ -75,7 +91,10 @@ if [ $? -eq 0 ]; then
     echo "   - Point ${REGISTRY_UI_DOMAIN} to http://<your-nas-ip>:8880"
     echo "   - Point traefik.${REGISTRY_DOMAIN} to http://<your-nas-ip>:8881 for dashboard"
     echo "3. Access your UI at: https://${REGISTRY_UI_DOMAIN}"
-    echo "4. To login, run: docker login ${REGISTRY_DOMAIN}"
+    echo "4. Access your Traefik Dashboard at: https://${TRAEFIK_DASHBOARD_DOMAIN}"
+    echo "5. To login registry, run: docker login ${REGISTRY_DOMAIN}"
+    echo ""
+    echo -e "${RED}UI/Dashboard Basic Auth: ${BASIC_AUTH_USER}/${BASIC_AUTH_PASS} (Please note it down, only show once)${NC}"
     echo "-----------------------------------------------------"
 else
     log_error "There was an error starting the services. Please check logs with 'sudo docker-compose logs'."
