@@ -30,7 +30,6 @@ services:
       - "traefik.http.routers.traefik-dashboard.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=web"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
-      - "traefik.http.routers.traefik-dashboard.middlewares=traefik-dashboard-auth@file"
 
   registry:
     image: registry:2
@@ -78,7 +77,6 @@ services:
       - "traefik.http.routers.registry-ui.rule=Host(`${REGISTRY_UI_DOMAIN}`)"
       - "traefik.http.routers.registry-ui.entrypoints=web"
       - "traefik.http.services.registry-ui.loadbalancer.server.port=${REGISTRY_UI_INTERNAL_PORT}"
-      - "traefik.http.routers.registry-ui.middlewares=registry-ui-auth@file"
 
 networks:
   traefik-net:
