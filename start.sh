@@ -21,7 +21,7 @@ log_info "Starting interactive setup..."
 read -p "Enter your Registry Domain (e.g., registry.example.com): " REGISTRY_DOMAIN
 read -p "Enter your Registry UI Domain (e.g., ui.example.com): " REGISTRY_UI_DOMAIN
 read -p "Enter your Registry Username: " REGISTRY_USER
-read -s -p "Enter your Registry Password: " REGISTRY_PASSWORD
+read -p "Enter your Registry Password: " REGISTRY_PASSWORD
 echo ""
 
 # 3. 產生 .env 環境變數檔案
