@@ -140,6 +140,11 @@ chmod +x start.sh
     
     產生後，將內容複製到 NAS 的 ./registry/auth/htpasswd 檔案，然後再執行 start.sh。
 
+    **若已經有在執行中的服務，請上傳 htpasswd 後執行下列指令重啟 Registry 服務，讓新密碼生效：**
+    ```bash
+    docker-compose restart registry
+    ```
+
 2. **執行啟動腳本**
     此腳本會建立必要檔案並啟動所有服務。
     ```bash
