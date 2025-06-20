@@ -46,46 +46,19 @@ graph TD
 
 ## 🚀 快速開始
 
-### 1. 啟動互動式設定
+### 1. 本機產生密碼
+
+請先在本機產生 htpasswd 密碼檔，詳見下方說明。
+
+### 2. 下載與啟動互動式設定
+
+```bash
+wget https://github.com/markx2008/OneClickRegistry/releases/latest/download/OneClickRegistry.tar.gz
+tar -xzvf OneClickRegistry.tar.gz
+cd OneClickRegistry
+```
 
 執行 `start.sh` 時，系統會以對話方式詢問你所有必要參數（如 Registry 網域、UI 網域、帳號等），不需要手動編輯 .env 檔案。
-
-### 2. 本機產生密碼
-
-**為什麼要用本機產生？**
-由於多數 NAS 或精簡 Linux 環境缺少 htpasswd 工具，或無法正確產生 bcrypt hash，建議在本機（Windows/Mac/Linux）產生密碼檔，確保相容性與安全性。
-
-#### 產生方式範例：
-
-- **用 Docker 產生 bcrypt（推薦）**：
-  ```bash
-  docker run --rm --entrypoint htpasswd httpd:2 -Bbn registryuser yourpassword
-  ```
-- **用 openssl 產生 MD5（不建議，實測於 Docker Registry 驗證失敗，原因不明）**：
-  ```bash
-  openssl passwd -1 'yourpassword'
-  # 產生 $1$ 開頭的 MD5 hash
-  # 但此方式在 Docker Registry 上有相容性問題，實測多次驗證失敗，建議不要使用！
-  ```
-- **用 Python 產生 bcrypt**：
-  ```python
-  import bcrypt
-  user = "registryuser"
-  password = b"yourpassword"
-  hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-  print(f"{user}:{hashed.decode()}")
-  ```
-- **線上工具**：
-  https://www.htaccesstools.com/htpasswd-generator/（選 bcrypt）
-
-產生後，將內容複製到 NAS 的 ./registry/auth/htpasswd 檔案，然後再執行 start.sh。
-
-**範例 htpasswd 檔案內容：**
-```
-registryuser:$2y$05$kETpGviUIfYUNRrayZ7vZOqgFcJUr.LLRGorPxJ.SAMqqYMeFilvq
-```
-
----
 
 ### 3. 啟動所有服務
 
@@ -150,15 +123,7 @@ chmod +x start.sh
 
 ## 操作步驟
 
-1. **下載專案原始碼**
-    使用以下指令下載最新版本的專案壓縮檔案並解壓縮：
-    ```bash
-    wget https://github.com/markx2008/OneClickRegistry/releases/latest/download/OneClickRegistry.tar.gz
-    tar -xzvf OneClickRegistry.tar.gz
-    cd OneClickRegistry
-    ```
-
-2. **本機產生密碼**
+1. **本機產生密碼**
     請在你的本機（Windows/Mac/Linux）使用 htpasswd 工具產生 bcrypt 密碼，例如：
     
     - 用 Docker：
@@ -175,17 +140,13 @@ chmod +x start.sh
     
     產生後，將內容複製到 NAS 的 ./registry/auth/htpasswd 檔案，然後再執行 start.sh。
 
-3. **執行啟動腳本**
+2. **執行啟動腳本**
     此腳本會建立必要檔案並啟動所有服務。
     ```bash
     chmod +x start.sh
     ./start.sh
     ```
 
-4. **設定 Cloudflare Tunnel**
+3. **設定 Cloudflare Tunnel**
     - 進入 Cloudflare 後台 → Zero Trust → Access → Tunnels。
-    - 建立新 Tunnel 並依指示於伺服器安裝 `cloudflared`。
-    - 在 Tunnel 的「Public Hostname」區段新增兩個主機名稱：
-        - 主機名稱 1：`registry`（對應 `REGISTRY_DOMAIN`），指向 `localhost:8000`（或你設定的 port）
-        - 主機名稱 2：`ui`（對應 `REGISTRY_UI_DOMAIN`），指向 `localhost:8000`
-    - 儲存設定。
+    - 建立新 Tunnel 並依指示於伺服器安裝 `cloudflared`

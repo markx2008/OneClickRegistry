@@ -20,8 +20,6 @@ fi
 log_info "Starting interactive setup..."
 read -p "Enter your Registry Domain (e.g., registry.example.com): " REGISTRY_DOMAIN
 read -p "Enter your Registry UI Domain (e.g., ui.example.com): " REGISTRY_UI_DOMAIN
-read -p "Enter your Registry Username: " REGISTRY_USER
-read -p "Enter your Registry Password: " REGISTRY_PASSWORD
 echo ""
 
 # 2.1 互動式輸入 Traefik Dashboard Domain
