@@ -16,7 +16,7 @@ jobs:
     - name: Prepare project directory
       run: |
         mkdir -p OneClickRegistry
-        cp -r docker-compose.yml .env.example start.sh traefik/ OneClickRegistry/
+        cp -r docker-compose.yml start.sh traefik/ OneClickRegistry/
 
     - name: Compress project files
       run: |
