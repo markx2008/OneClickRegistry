@@ -56,7 +56,6 @@ services:
       - "traefik.docker.network=oneclickregistry_traefik-net" # 建議明確指定網路名稱
       - "traefik.http.routers.registry.rule=Host(`${REGISTRY_DOMAIN}`)"
       - "traefik.http.routers.registry.entrypoints=web"
-      - "traefik.http.routers.registry.middlewares=registry-auth@file"
       - "traefik.http.services.registry.loadbalancer.server.port=5000"
 
   registry-ui:

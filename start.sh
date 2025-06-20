@@ -24,6 +24,10 @@ read -p "Enter your Registry Username: " REGISTRY_USER
 read -p "Enter your Registry Password: " REGISTRY_PASSWORD
 echo ""
 
+# 2.1 互動式輸入 Traefik Dashboard Domain
+read -p "Enter your Traefik Dashboard Domain (default: traefik.${REGISTRY_DOMAIN}): " TRAEFIK_DASHBOARD_DOMAIN
+TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN:-traefik.${REGISTRY_DOMAIN}}
+
 # 3. 產生 .env 環境變數檔案
 log_info "Creating .env file for Docker Compose..."
 {
@@ -33,7 +37,7 @@ log_info "Creating .env file for Docker Compose..."
     echo "TRAEFIK_WEB_PORT=8880"
     echo "TRAEFIK_API_PORT=8881"
     # ==========================================================
-    echo "TRAEFIK_DASHBOARD_DOMAIN=traefik.${REGISTRY_DOMAIN}"
+    echo "TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN}"
     echo "REGISTRY_UI_TITLE=My New OCR Registry"
     echo "REGISTRY_UI_INTERNAL_PORT=80"
 } > ./.env
@@ -55,17 +59,8 @@ http:
 EOF
 log_info "Traefik middleware config created."
 
-# 5. 產生 htpasswd 檔案 (使用內建 openssl)
-log_info "Generating htpasswd file for user: $REGISTRY_USER..."
-SALT=$(openssl rand -base64 6)
-PASSWORD_HASH=$(openssl passwd -1 -salt "$SALT" "$REGISTRY_PASSWORD")
-if [ $? -eq 0 ] && [ -n "$PASSWORD_HASH" ]; then
-    echo "$REGISTRY_USER:$PASSWORD_HASH" > ./registry/auth/htpasswd
-    log_info "htpasswd file created successfully."
-else
-    log_error "Failed to create htpasswd file using openssl."
-    exit 1
-fi
+# 5. 提示用戶手動產生 htpasswd
+log_info "請在本機產生 htpasswd 檔案（建議用 bcrypt），並將檔案上傳至 ./registry/auth/htpasswd，再重新啟動服務。"
 
 # 6. 啟動服務
 log_info "Starting all services with Docker Compose..."
@@ -76,15 +71,13 @@ if [ $? -eq 0 ]; then
     log_info "All services started successfully!"
     echo "-----------------------------------------------------"
     log_info "Next Steps:"
-    # === 【修改點】更新提示訊息中的端口號 ===
     echo "1. Your new services are running on ports 8880 (web) and 8881 (api)."
     echo "2. Set up your reverse proxy:"
-    echo "   - Point ${GREEN}${REGISTRY_DOMAIN}${NC} to http://<your-nas-ip>:8880"
-    echo "   - Point ${GREEN}${REGISTRY_UI_DOMAIN}${NC} to http://<your-nas-ip>:8880"
-    echo "   - Point ${GREEN}traefik.${REGISTRY_DOMAIN}${NC} to http://<your-nas-ip>:8881 for dashboard"
-    # =======================================
-    echo "3. Access your UI at: ${GREEN}https://${REGISTRY_UI_DOMAIN}${NC}"
-    echo "4. To login, run: ${YELLOW}docker login ${REGISTRY_DOMAIN}${NC}"
+    echo "   - Point ${REGISTRY_DOMAIN} to http://<your-nas-ip>:8880"
+    echo "   - Point ${REGISTRY_UI_DOMAIN} to http://<your-nas-ip>:8880"
+    echo "   - Point traefik.${REGISTRY_DOMAIN} to http://<your-nas-ip>:8881 for dashboard"
+    echo "3. Access your UI at: https://${REGISTRY_UI_DOMAIN}"
+    echo "4. To login, run: docker login ${REGISTRY_DOMAIN}"
     echo "-----------------------------------------------------"
 else
     log_error "There was an error starting the services. Please check logs with 'sudo docker-compose logs'."

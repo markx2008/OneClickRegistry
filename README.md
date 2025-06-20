@@ -1,12 +1,11 @@
 # OneClickRegistry 私有映像倉庫部署說明
 
-本專案提供「Traefik + Registry + Registry UI」一鍵安裝解決方案，適合需要自架私有 Docker Registry 並使用帳號密碼驗證Registry，提供給部屬服務拉取鏡像。
+本專案提供「Traefik + Registry + Registry UI」安裝方案，適合需要自架私有 Docker Registry 並使用帳號密碼驗證Registry，提供給部屬服務拉取鏡像。
 主要特色與條件如下：
 
 1. Registry 需可供外部拉取映像，必須經由反向代理（如 Traefik）並強制走 443（HTTPS），否則 Docker 會報錯。
 2. Registry 強制啟用帳號密碼驗證。
 3. Registry UI 已處理跨域請求（CORS）問題，避免前端操作失敗。
-4. 所有設定皆集中於 `.env`，可自訂三個服務的 port，並可透過一鍵腳本自動完成部署。
 
 
 ---
@@ -47,24 +46,45 @@ graph TD
 
 ## 🚀 快速開始
 
-### 1. 複製並設定環境變數
+### 1. 啟動互動式設定
 
-```bash
-cp .env.example .env
-nano .env
+執行 `start.sh` 時，系統會以對話方式詢問你所有必要參數（如 Registry 網域、UI 網域、帳號等），不需要手動編輯 .env 檔案。
+
+### 2. 本機產生密碼
+
+**為什麼要用本機產生？**
+由於多數 NAS 或精簡 Linux 環境缺少 htpasswd 工具，或無法正確產生 bcrypt hash，建議在本機（Windows/Mac/Linux）產生密碼檔，確保相容性與安全性。
+
+#### 產生方式範例：
+
+- **用 Docker 產生 bcrypt（推薦）**：
+  ```bash
+  docker run --rm --entrypoint htpasswd httpd:2 -Bbn registryuser yourpassword
+  ```
+- **用 openssl 產生 MD5（不建議，實測於 Docker Registry 驗證失敗，原因不明）**：
+  ```bash
+  openssl passwd -1 'yourpassword'
+  # 產生 $1$ 開頭的 MD5 hash
+  # 但此方式在 Docker Registry 上有相容性問題，實測多次驗證失敗，建議不要使用！
+  ```
+- **用 Python 產生 bcrypt**：
+  ```python
+  import bcrypt
+  user = "registryuser"
+  password = b"yourpassword"
+  hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+  print(f"{user}:{hashed.decode()}")
+  ```
+- **線上工具**：
+  https://www.htaccesstools.com/htpasswd-generator/（選 bcrypt）
+
+產生後，將內容複製到 NAS 的 ./registry/auth/htpasswd 檔案，然後再執行 start.sh。
+
+**範例 htpasswd 檔案內容：**
 ```
-請依需求修改 `.env` 內容，特別是 `REGISTRY_DOMAIN`、`REGISTRY_UI_DOMAIN`、`REGISTRY_PASSWORD` 及各服務 port。
-範例參數說明：
-- `REGISTRY_DOMAIN`：Registry 對外網域（如 registry.your-domain.com）
-- `REGISTRY_UI_DOMAIN`：UI 對外網域（如 ui.your-domain.com）
-- `TRAEFIK_WEB_PORT`、`REGISTRY_PORT`、`REGISTRY_UI_PORT`：可自訂三個服務的對應 port
-- `REGISTRY_USER`、`REGISTRY_PASSWORD`：登入帳號密碼
+registryuser:$2y$05$kETpGviUIfYUNRrayZ7vZOqgFcJUr.LLRGorPxJ.SAMqqYMeFilvq
+```
 
----
-
-### 2. 自動產生 Registry 帳號密碼檔
-
-腳本現在使用 Docker 容器自動生成 Registry 帳號密碼檔，無需手動安裝 `htpasswd` 工具。
 ---
 
 ### 3. 啟動所有服務
@@ -84,8 +104,8 @@ chmod +x start.sh
 - 登入 Cloudflare 後台 → Zero Trust → Access → Tunnels。
 - 建立新 Tunnel 並依指示於伺服器安裝 `cloudflared`。
 - 在 Tunnel 的「Public Hostname」區段新增兩個主機名稱：
-    - 主機名稱 1：`registry`（對應 `REGISTRY_DOMAIN`），指向 `localhost:8000`（或你設定的 port）
-    - 主機名稱 2：`ui`（對應 `REGISTRY_UI_DOMAIN`），指向 `localhost:8000`
+    - 主機名稱 1：registry（對應 REGISTRY_DOMAIN），指向 localhost:8880（或你設定的 port）
+    - 主機名稱 2：ui（對應 REGISTRY_UI_DOMAIN），指向 localhost:8880
 - 儲存設定。
 
 ---
@@ -138,8 +158,22 @@ chmod +x start.sh
     cd OneClickRegistry
     ```
 
-2. **跳過設定環境變數**
-    現在已改為互動式設定，執行腳本時會提示輸入必要的參數，無需手動修改 `.env` 檔案。
+2. **本機產生密碼**
+    請在你的本機（Windows/Mac/Linux）使用 htpasswd 工具產生 bcrypt 密碼，例如：
+    
+    - 用 Docker：
+      docker run --rm --entrypoint htpasswd httpd:2 -Bbn registryuser yourpassword
+    - 用 openssl 產生 MD5：
+      openssl passwd -1 'yourpassword'
+    - 用 Python 產生 bcrypt：
+      import bcrypt
+      user = "registryuser"
+      password = b"yourpassword"
+      hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+      print(f"{user}:{hashed.decode()}")
+    - 或用線上工具：https://www.htaccesstools.com/htpasswd-generator/（選 bcrypt）
+    
+    產生後，將內容複製到 NAS 的 ./registry/auth/htpasswd 檔案，然後再執行 start.sh。
 
 3. **執行啟動腳本**
     此腳本會建立必要檔案並啟動所有服務。
@@ -152,28 +186,6 @@ chmod +x start.sh
     - 進入 Cloudflare 後台 → Zero Trust → Access → Tunnels。
     - 建立新 Tunnel 並依指示於伺服器安裝 `cloudflared`。
     - 在 Tunnel 的「Public Hostname」區段新增兩個主機名稱：
-        - **主機名稱 1：**
-            - 子網域：`registry`（或你設定的 `REGISTRY_DOMAIN`）
-            - 網域：`your-domain.com`
-            - 服務類型：`HTTP`
-            - URL：`localhost:8000`（或你設定的 `TRAEFIK_WEB_PORT`）
-        - **主機名稱 2：**
-            - 子網域：`ui`（或你設定的 `REGISTRY_UI_DOMAIN`）
-            - 網域：`your-domain.com`
-            - 服務類型：`HTTP`
-            - URL：`localhost:8000`（同上）
-    - 儲存 Tunnel 設定。
-
-5. **完成！**
-    - UI 入口：`https://ui.your-domain.com`
-    - 推送/拉取映像檔：`docker login registry.your-domain.com`
-
----
-
-## 專案檔案說明
-
-- `docker-compose.yml`：定義所有服務（Traefik、Registry、UI）
-- `.env.example`：環境變數設定範本
-- `start.sh`：一鍵部署與啟動腳本
-- `traefik/`：Traefik 設定檔
-- `registry/`：映像檔資料與認證檔案存放處
+        - 主機名稱 1：`registry`（對應 `REGISTRY_DOMAIN`），指向 `localhost:8000`（或你設定的 port）
+        - 主機名稱 2：`ui`（對應 `REGISTRY_UI_DOMAIN`），指向 `localhost:8000`
+    - 儲存設定。
