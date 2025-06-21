@@ -47,9 +47,13 @@ services:
       - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods=['HEAD', 'GET', 'OPTIONS', 'DELETE']
       - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers=['Authorization', 'Accept']
       - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=['true']
+      # 啟用內部 TLS
+      - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt
+      - REGISTRY_HTTP_TLS_KEY=/certs/registry.key
     volumes:
       - ./registry/data:/data
       - ./registry/auth:/auth:ro
+      - ./traefik/certs:/certs:ro
     networks:
       - traefik-net
     labels:
@@ -57,7 +61,11 @@ services:
       - "traefik.docker.network=oneclickregistry_traefik-net" # 建議明確指定網路名稱
       - "traefik.http.routers.registry.rule=Host(`${REGISTRY_DOMAIN}`)"
       - "traefik.http.routers.registry.entrypoints=web"
+      # === 【修改點】讓 Traefik 使用 HTTPS 連接到 Registry ===
       - "traefik.http.services.registry.loadbalancer.server.port=5000"
+      - "traefik.http.services.registry.loadbalancer.server.scheme=https"
+      - "traefik.http.services.registry.loadbalancer.serverstransport.insecureskipverify=true"
+      # ========================================================
 
   registry-ui:
     image: joxit/docker-registry-ui:main

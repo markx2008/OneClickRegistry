@@ -15,6 +15,10 @@ if ! command -v docker &>/dev/null || ! command -v docker-compose &>/dev/null; t
     log_error "Docker or Docker Compose is not installed."
     exit 1
 fi
+if ! command -v openssl &>/dev/null; then
+    log_error "openssl is not installed. Please install it to generate self-signed certificates."
+    exit 1
+fi
 
 # 2. 互動式設定
 log_info "Starting interactive setup..."
@@ -70,6 +74,19 @@ log_info "Creating required directories and config files..."
 mkdir -p ./registry/data
 mkdir -p ./registry/auth
 mkdir -p ./traefik/config
+mkdir -p ./traefik/certs
+
+# 產生內部通訊用的自簽憑證
+if [ ! -f ./traefik/certs/registry.key ] || [ ! -f ./traefik/certs/registry.crt ]; then
+    log_info "Generating self-signed certificate for internal communication..."
+    openssl req -x509 -newkey rsa:4096 -nodes \
+        -keyout ./traefik/certs/registry.key -out ./traefik/certs/registry.crt \
+        -days 3650 \
+        -subj "/CN=registry.internal"
+    log_info "Self-signed certificate generated."
+else
+    log_info "Self-signed certificate already exists."
+fi
 
 # 5. 儲存使用者輸入的 htpasswd 到檔案
 echo "$HTPASSWD_ENTRY" > ./registry/auth/htpasswd
