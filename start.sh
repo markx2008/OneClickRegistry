@@ -26,19 +26,29 @@ echo ""
 read -p "Enter your Traefik Dashboard Domain (default: traefik.${REGISTRY_DOMAIN}): " TRAEFIK_DASHBOARD_DOMAIN
 TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN:-traefik.${REGISTRY_DOMAIN}}
 
-# 2.2 互動式輸入 Basic Auth 帳號密碼
-read -p "Enter UI/Dashboard Basic Auth Username (default: admin): " BASIC_AUTH_USER
-BASIC_AUTH_USER=${BASIC_AUTH_USER:-admin}
-read -p "Enter UI/Dashboard Basic Auth Password (default: random 8 chars): " BASIC_AUTH_PASS
-if [ -z "$BASIC_AUTH_PASS" ]; then
-    BASIC_AUTH_PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
+# 2.3 互動式輸入 Registry 認證資訊
+log_info "Authentication Setup"
+echo -e "${YELLOW}Please enter your htpasswd entry (format: username:hash)${NC}"
+echo "Example: registry:$apr1$le1k9qfm$TjAF6rksD1nRw0QhJkW7o."
+echo "This will be used for both Registry authentication and UI/Dashboard access."
+read -p "htpasswd entry: " HTPASSWD_ENTRY
+
+# 驗證 htpasswd 格式
+if [ -z "$HTPASSWD_ENTRY" ]; then
+    log_error "No htpasswd entry provided. Authentication will not work correctly."
+    exit 1
 fi
 
-# 2.3 互動式輸入 Registry 認證資訊
-log_info "Registry Authentication Setup"
-echo -e "${YELLOW}Please enter your Registry htpasswd entry (format: username:hash)${NC}"
-echo "Example: registry:$apr1$le1k9qfm$TjAF6rksD1nRw0QhJkW7o."
-read -p "Registry htpasswd entry: " REGISTRY_HTPASSWD_ENTRY
+# 從 htpasswd 提取用戶名和哈希
+REGISTRY_USER=$(echo "$HTPASSWD_ENTRY" | cut -d':' -f1)
+REGISTRY_HASH=$(echo "$HTPASSWD_ENTRY" | cut -d':' -f2-)
+
+if [ -z "$REGISTRY_USER" ] || [ -z "$REGISTRY_HASH" ]; then
+    log_error "Invalid htpasswd format. Expected format: username:hash"
+    exit 1
+fi
+
+log_info "Using credentials for user: $REGISTRY_USER"
 
 # 3. 產生 .env 環境變數檔案
 log_info "Creating .env file for Docker Compose..."
@@ -61,32 +71,24 @@ mkdir -p ./registry/data
 mkdir -p ./registry/auth
 mkdir -p ./traefik/config
 
-# 產生 Basic Auth hash
-BASIC_AUTH_HASH=$(openssl passwd -apr1 "$BASIC_AUTH_PASS")
-
-# 建立 Traefik 中間件設定檔
+# 建立 Traefik 中間件設定檔，使用相同的認證資訊
 cat <<EOF > ./traefik/config/middlewares.yml
 http:
   middlewares:
     registry-ui-auth:
       basicAuth:
         users:
-          - "$BASIC_AUTH_USER:$BASIC_AUTH_HASH"
+          - "$HTPASSWD_ENTRY"
     traefik-dashboard-auth:
       basicAuth:
         users:
-          - "$BASIC_AUTH_USER:$BASIC_AUTH_HASH"
+          - "$HTPASSWD_ENTRY"
 EOF
 log_info "Traefik middleware config created."
 
 # 5. 儲存使用者輸入的 htpasswd 到檔案
-if [ -n "$REGISTRY_HTPASSWD_ENTRY" ]; then
-    echo "$REGISTRY_HTPASSWD_ENTRY" > ./registry/auth/htpasswd
-    log_info "Registry htpasswd file created successfully."
-else
-    log_error "No htpasswd entry provided. Registry authentication will not work correctly."
-    log_info "Please manually create ./registry/auth/htpasswd file before using the registry."
-fi
+echo "$HTPASSWD_ENTRY" > ./registry/auth/htpasswd
+log_info "Registry htpasswd file created successfully."
 
 # 6. 啟動服務
 log_info "Starting all services with Docker Compose..."
@@ -106,8 +108,8 @@ if [ $? -eq 0 ]; then
     echo "4. Access your Traefik Dashboard at: https://${TRAEFIK_DASHBOARD_DOMAIN}"
     echo "5. To login registry, run: docker login ${REGISTRY_DOMAIN}"
     echo ""
-    echo -e "${RED}UI/Dashboard Basic Auth: ${BASIC_AUTH_USER}/${BASIC_AUTH_PASS} (Please note it down, only show once)${NC}"
-    echo "Registry Authentication: Using the htpasswd entry you provided"
+    echo -e "${RED}Authentication Credentials: Username=${REGISTRY_USER} (Please note it down)${NC}"
+    echo "The same credentials will be used for Registry login, UI access, and Traefik Dashboard."
     echo "-----------------------------------------------------"
 else
     log_error "There was an error starting the services. Please check logs with 'sudo docker-compose logs'."
