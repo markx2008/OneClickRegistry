@@ -92,14 +92,59 @@ chmod +x start.sh
 
 ---
 
-### 4. 設定 Cloudflare Tunnel（如需外部存取）
+### 4. 設定外部存取（選用）
 
-- 登入 Cloudflare 後台 → Zero Trust → Access → Tunnels。
-- 建立新 Tunnel 並依指示於伺服器安裝 `cloudflared`。
-- 在 Tunnel 的「Public Hostname」區段新增兩個主機名稱：
-    - 主機名稱 1：registry（對應 REGISTRY_DOMAIN），指向 localhost:8880（或你設定的 port）
-    - 主機名稱 2：ui（對應 REGISTRY_UI_DOMAIN），指向 localhost:8880
-- 儲存設定。
+> **注意**：此步驟為**非必要**，僅適用於需要從外部網路存取 Registry 的情況。如果您的 Registry 僅供內部網路使用，可跳過此步驟。
+
+#### 方案一：使用 Cloudflare Tunnel（推薦）
+
+Cloudflare Tunnel 可以安全地將您的內部服務暴露到公網，無需開放防火牆埠或設定複雜的反向代理。
+
+1. **安裝與設定步驟**：
+   - 登入 [Cloudflare Zero Trust 儀表板](https://one.dash.cloudflare.com/)
+   - 前往 `Access` → `Tunnels` → 點擊「建立新 Tunnel」
+   - 為 Tunnel 命名（如「Registry Tunnel」）並點擊「下一步」
+   - 依照指示在您的伺服器上安裝 `cloudflared`
+   - 安裝完成後，設定公開主機名稱：
+     - 新增主機名稱 1：`registry.yourdomain.com` → 指向 `localhost:8880`
+     - 新增主機名稱 2：`ui.yourdomain.com` → 指向 `localhost:8880`
+   - 點擊「儲存」完成設定
+
+2. **驗證 Tunnel 連線**：
+   - 執行 `cloudflared tunnel info <tunnel-id>` 確認 Tunnel 狀態
+   - 在瀏覽器訪問 `https://ui.yourdomain.com` 檢查 UI 是否正常顯示
+
+#### 方案二：手動設定反向代理
+
+如果您已有其他反向代理（如 Nginx、Apache），可以手動設定：
+
+1. 將以下域名指向您的 NAS/伺服器 IP：
+   - `registry.yourdomain.com` → 指向 `http://<your-nas-ip>:8880`
+   - `ui.yourdomain.com` → 指向 `http://<your-nas-ip>:8880`
+   - `traefik.yourdomain.com` → 指向 `http://<your-nas-ip>:8881`（儀表板）
+
+2. 確保您的反向代理已正確設定 SSL 憑證，因為 Docker 要求 Registry 必須使用 HTTPS
+
+#### 方案三：僅內部網路使用
+
+如果您只在內部網路使用 Registry：
+
+1. 在內部 DNS 伺服器中設定以下記錄：
+   - `registry.yourdomain.local` → 指向 `<your-nas-ip>`
+   - `ui.yourdomain.local` → 指向 `<your-nas-ip>`
+
+2. 或在本地電腦的 hosts 檔案中加入：
+   ```
+   <your-nas-ip> registry.yourdomain.local ui.yourdomain.local
+   ```
+
+3. 在 Docker 設定中加入信任設定（因為使用自簽憑證或 HTTP）：
+   ```json
+   // /etc/docker/daemon.json
+   {
+     "insecure-registries": ["registry.yourdomain.local:8880"]
+   }
+   ```
 
 ---
 
@@ -157,6 +202,5 @@ chmod +x start.sh
     ./start.sh
     ```
 
-3. **設定 Cloudflare Tunnel**
-    - 進入 Cloudflare 後台 → Zero Trust → Access → Tunnels。
-    - 建立新 Tunnel 並依指示於伺服器安裝 `cloudflared`
+3. **設定外部存取**
+    根據您的需求，選擇上方「設定外部存取」章節中的適合方案進行設定。
