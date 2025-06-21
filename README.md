@@ -46,9 +46,29 @@ graph TD
 
 ## 🚀 快速開始
 
-### 1. 本機產生密碼
+### 1. 準備 htpasswd 認證資訊
 
-請先在本機產生 htpasswd 密碼檔，詳見下方說明。
+在啟動腳本前，請先準備好 htpasswd 格式的認證資訊。腳本執行過程中會要求您輸入此資訊。
+
+格式範例：`username:$apr1$le1k9qfm$TjAF6rksD1nRw0QhJkW7o.`
+
+您可以透過以下方式產生：
+
+- **用 Docker 產生 bcrypt 格式（推薦）**：
+  ```bash
+  docker run --rm --entrypoint htpasswd httpd:2 -Bbn registryuser yourpassword
+  ```
+
+- **用 Python 產生 bcrypt 格式**：
+  ```python
+  import bcrypt
+  user = "registryuser"
+  password = b"yourpassword"
+  hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+  print(f"{user}:{hashed.decode()}")
+  ```
+
+- **或使用線上工具**：https://www.htaccesstools.com/htpasswd-generator/ （選 bcrypt）
 
 ### 2. 下載與啟動互動式設定
 
@@ -58,7 +78,7 @@ tar -xzvf OneClickRegistry.tar.gz
 cd OneClickRegistry
 ```
 
-執行 `start.sh` 時，系統會以對話方式詢問你所有必要參數（如 Registry 網域、UI 網域、帳號等），不需要手動編輯 .env 檔案。
+執行 `start.sh` 時，系統會以對話方式詢問你所有必要參數（如 Registry 網域、UI 網域、帳號等），以及 Registry 的 htpasswd 認證資訊。
 
 ### 3. 啟動所有服務
 
@@ -68,7 +88,7 @@ cd OneClickRegistry
 chmod +x start.sh
 ./start.sh
 ```
-此腳本會自動建立所需目錄、啟動 Traefik、Registry 及 Registry UI。
+此腳本會自動建立所需目錄、設定認證資訊、啟動 Traefik、Registry 及 Registry UI。
 
 ---
 
@@ -90,7 +110,7 @@ chmod +x start.sh
   ```bash
   docker login registry.your-domain.com
   ```
-  輸入你在 `.env` 設定的帳號密碼即可。
+  輸入你在 htpasswd 設定的帳號密碼即可。
 
 ---
 
@@ -117,30 +137,15 @@ chmod +x start.sh
 1. **一個網域名稱**（如：`your-domain.com`）
 2. **Cloudflare 帳號**（用於免費 Tunnel 服務）
 3. **已安裝 Docker 與 Docker Compose 的伺服器/NAS**
-4. 已安裝 `apache2-utils`（或 `httpd-tools`）以提供 `htpasswd` 指令
 
 ---
 
 ## 操作步驟
 
-1. **本機產生密碼**
-    請在你的本機（Windows/Mac/Linux）使用 htpasswd 工具產生 bcrypt 密碼，例如：
+1. **準備 htpasswd 認證資訊**
+    請在執行腳本前，先準備好 htpasswd 格式的認證資訊（見上方說明）。
     
-    - 用 Docker：
-      docker run --rm --entrypoint htpasswd httpd:2 -Bbn registryuser yourpassword
-    - 用 openssl 產生 MD5：
-      openssl passwd -1 'yourpassword'
-    - 用 Python 產生 bcrypt：
-      import bcrypt
-      user = "registryuser"
-      password = b"yourpassword"
-      hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-      print(f"{user}:{hashed.decode()}")
-    - 或用線上工具：https://www.htaccesstools.com/htpasswd-generator/（選 bcrypt）
-    
-    產生後，將內容複製到 NAS 的 ./registry/auth/htpasswd 檔案，然後再執行 start.sh。
-
-    **若已經有在執行中的服務，請上傳 htpasswd 後執行下列指令重啟 Registry 服務，讓新密碼生效：**
+    **若已經有在執行中的服務，想要更新 htpasswd，可以直接編輯 ./registry/auth/htpasswd 檔案，然後執行下列指令重啟 Registry 服務，讓新密碼生效：**
     ```bash
     docker-compose restart registry
     ```

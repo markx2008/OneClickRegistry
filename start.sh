@@ -34,6 +34,12 @@ if [ -z "$BASIC_AUTH_PASS" ]; then
     BASIC_AUTH_PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
 fi
 
+# 2.3 互動式輸入 Registry 認證資訊
+log_info "Registry Authentication Setup"
+echo -e "${YELLOW}Please enter your Registry htpasswd entry (format: username:hash)${NC}"
+echo "Example: registry:$apr1$le1k9qfm$TjAF6rksD1nRw0QhJkW7o."
+read -p "Registry htpasswd entry: " REGISTRY_HTPASSWD_ENTRY
+
 # 3. 產生 .env 環境變數檔案
 log_info "Creating .env file for Docker Compose..."
 {
@@ -73,8 +79,14 @@ http:
 EOF
 log_info "Traefik middleware config created."
 
-# 5. 提示用戶手動產生 htpasswd
-log_info "請在本機產生 htpasswd 檔案（建議用 bcrypt），並將檔案上傳至 ./registry/auth/htpasswd，再重新啟動服務。"
+# 5. 儲存使用者輸入的 htpasswd 到檔案
+if [ -n "$REGISTRY_HTPASSWD_ENTRY" ]; then
+    echo "$REGISTRY_HTPASSWD_ENTRY" > ./registry/auth/htpasswd
+    log_info "Registry htpasswd file created successfully."
+else
+    log_error "No htpasswd entry provided. Registry authentication will not work correctly."
+    log_info "Please manually create ./registry/auth/htpasswd file before using the registry."
+fi
 
 # 6. 啟動服務
 log_info "Starting all services with Docker Compose..."
@@ -95,6 +107,7 @@ if [ $? -eq 0 ]; then
     echo "5. To login registry, run: docker login ${REGISTRY_DOMAIN}"
     echo ""
     echo -e "${RED}UI/Dashboard Basic Auth: ${BASIC_AUTH_USER}/${BASIC_AUTH_PASS} (Please note it down, only show once)${NC}"
+    echo "Registry Authentication: Using the htpasswd entry you provided"
     echo "-----------------------------------------------------"
 else
     log_error "There was an error starting the services. Please check logs with 'sudo docker-compose logs'."
