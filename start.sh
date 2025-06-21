@@ -71,24 +71,21 @@ mkdir -p ./registry/data
 mkdir -p ./registry/auth
 mkdir -p ./traefik/config
 
-# 建立 Traefik 中間件設定檔，使用相同的認證資訊
-cat <<EOF > ./traefik/config/middlewares.yml
-http:
-  middlewares:
-    registry-ui-auth:
-      basicAuth:
-        users:
-          - "$HTPASSWD_ENTRY"
-    traefik-dashboard-auth:
-      basicAuth:
-        users:
-          - "$HTPASSWD_ENTRY"
-EOF
-log_info "Traefik middleware config created."
-
 # 5. 儲存使用者輸入的 htpasswd 到檔案
 echo "$HTPASSWD_ENTRY" > ./registry/auth/htpasswd
 log_info "Registry htpasswd file created successfully."
+
+# 建立 Traefik 中間件設定檔，使用 usersFile 指向 htpasswd 檔案
+cat <<EOF > ./traefik/config/middlewares.yml
+# traefik/middlewares.yml
+http:
+  middlewares:
+    registry-auth:
+      basicAuth:
+        usersFile: "/auth/htpasswd" # 指向掛載進來的認證檔案
+        removeHeader: true
+EOF
+log_info "Traefik middleware config created."
 
 # 6. 啟動服務
 log_info "Starting all services with Docker Compose..."
