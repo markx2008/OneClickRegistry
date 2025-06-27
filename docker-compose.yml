@@ -14,9 +14,9 @@ services:
       - REGISTRY_AUTH=htpasswd
       - REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd
       - REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm
-      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin=['https://${REGISTRY_DOMAIN}']
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin=['https://${REGISTRY_DOMAIN}:8082', 'https://${REGISTRY_DOMAIN}:5003']
       - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods=['HEAD', 'GET', 'OPTIONS', 'DELETE']
-      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers=['Authorization', 'Accept']
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers=['Authorization', 'Accept', 'Origin']
       - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=['true']
       - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt
       - REGISTRY_HTTP_TLS_KEY=/certs/registry.key
@@ -34,7 +34,7 @@ services:
     depends_on:
       - tailscale
     environment:
-      - REGISTRY_URL=https://localhost:5003
+      - REGISTRY_URL=https://${REGISTRY_DOMAIN}:5003
       - REGISTRY_TITLE=${REGISTRY_UI_TITLE}
       - DELETE_IMAGES=true
       - NGINX_LISTEN_PORT=8082
