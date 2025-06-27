@@ -112,7 +112,7 @@ mkdir -p ./tailscale/config
 cat <<EOF > ./tailscale/config/funnel.json
 {
   "TCP": {
-    "80": {
+    "8082": {
       "HTTPS": true
     },
     "5003": {
@@ -120,10 +120,10 @@ cat <<EOF > ./tailscale/config/funnel.json
     }
   },
   "Web": {
-    "${REGISTRY_DOMAIN}:80": {
+    "${REGISTRY_DOMAIN}:8082": {
       "Handlers": {
         "/": {
-          "Proxy": "http://localhost:80"
+          "Proxy": "http://localhost:8082"
         }
       }
     },
@@ -137,7 +137,7 @@ cat <<EOF > ./tailscale/config/funnel.json
     }
   },
   "AllowFunnel": {
-    "${REGISTRY_DOMAIN}:80": true,
+    "${REGISTRY_DOMAIN}:8082": true,
     "${REGISTRY_DOMAIN}:5003": true
   }
 }
@@ -173,7 +173,7 @@ if [ $? -eq 0 ]; then
     echo "   Check the Tailscale admin panel to see your node '${TS_HOSTNAME}'."
     echo "2. Access your services at:"
     echo "   - Registry & UI: ${REGISTRY_DOMAIN}"
-    echo "   - UI Interface: ${REGISTRY_DOMAIN}:80"
+    echo "   - UI Interface: ${REGISTRY_DOMAIN}:8082"
     echo "   - Docker Registry: ${REGISTRY_DOMAIN}:5003"
     echo "3. To login to the registry, run: docker login ${REGISTRY_DOMAIN}:5003"
     echo ""
