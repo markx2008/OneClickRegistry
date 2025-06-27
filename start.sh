@@ -107,10 +107,6 @@ mkdir -p ./registry/data
 mkdir -p ./registry/auth
 mkdir -p ./registry/certs
 
-# 創建 Nginx 配置
-log_info "Creating Nginx configuration..."
-./create-config.sh
-
 # Tailscale Funnel 設定
 mkdir -p ./tailscale/config
 cat <<EOF > ./tailscale/config/funnel.json
@@ -137,24 +133,10 @@ cat <<EOF > ./tailscale/config/funnel.json
           "Proxy": "https://localhost:5003",
           "InsecureSkipVerify": true,
           "ProxySetHeaders": {
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": "https://${REGISTRY_DOMAIN}:8082",
             "Access-Control-Allow-Methods": "HEAD, GET, OPTIONS, DELETE",
-            "Access-Control-Allow-Headers": "Authorization, Accept, Origin, Content-Type",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "1800"
-          }
-        },
-        "/v2/*": {
-          "Methods": ["OPTIONS"],
-          "StatusCode": 200,
-          "SetHeaders": {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "HEAD, GET, OPTIONS, DELETE",
-            "Access-Control-Allow-Headers": "Authorization, Accept, Origin, Content-Type",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "1800",
-            "Content-Length": "0",
-            "Content-Type": "text/plain"
+            "Access-Control-Allow-Headers": "Authorization, Accept, Origin",
+            "Access-Control-Allow-Credentials": "true"
           }
         }
       }
