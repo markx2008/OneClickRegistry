@@ -97,7 +97,7 @@ log_info "Creating .env file for Docker Compose..."
     echo "REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=['true']"
     echo "REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt"
     echo "REGISTRY_HTTP_TLS_KEY=/certs/registry.key"
-    echo "REGISTRY_HTTP_ADDR=0.0.0.0:5001"
+    echo "REGISTRY_HTTP_ADDR=0.0.0.0:5003"
 } > ./.env
 log_info ".env file created successfully."
 
@@ -115,7 +115,7 @@ cat <<EOF > ./tailscale/config/funnel.json
     "80": {
       "HTTPS": true
     },
-    "5001": {
+    "5003": {
       "HTTPS": true
     }
   },
@@ -127,10 +127,10 @@ cat <<EOF > ./tailscale/config/funnel.json
         }
       }
     },
-    "${REGISTRY_DOMAIN}:5001": {
+    "${REGISTRY_DOMAIN}:5003": {
       "Handlers": {
         "/": {
-          "Proxy": "https://localhost:5001",
+          "Proxy": "https://localhost:5003",
           "InsecureSkipVerify": true
         }
       }
@@ -138,7 +138,7 @@ cat <<EOF > ./tailscale/config/funnel.json
   },
   "AllowFunnel": {
     "${REGISTRY_DOMAIN}:80": true,
-    "${REGISTRY_DOMAIN}:5001": true
+    "${REGISTRY_DOMAIN}:5003": true
   }
 }
 EOF
@@ -174,8 +174,8 @@ if [ $? -eq 0 ]; then
     echo "2. Access your services at:"
     echo "   - Registry & UI: ${REGISTRY_DOMAIN}"
     echo "   - UI Interface: ${REGISTRY_DOMAIN}:80"
-    echo "   - Docker Registry: ${REGISTRY_DOMAIN}:5001"
-    echo "3. To login to the registry, run: docker login ${REGISTRY_DOMAIN}:5001"
+    echo "   - Docker Registry: ${REGISTRY_DOMAIN}:5003"
+    echo "3. To login to the registry, run: docker login ${REGISTRY_DOMAIN}:5003"
     echo ""
     echo -e "${RED}Authentication Credentials: Username=${REGISTRY_USER} (Please note it down)${NC}"
     echo "The same credentials will be used for Registry login and UI access."
