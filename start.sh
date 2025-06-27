@@ -111,40 +111,25 @@ mkdir -p ./registry/certs
 mkdir -p ./tailscale/config
 cat <<EOF > ./tailscale/config/funnel.json
 {
-  "TCP": {
-    "8082": {
-      "HTTPS": true
-    },
-    "5003": {
-      "HTTPS": true
-    }
-  },
   "Web": {
-    "${REGISTRY_DOMAIN}:8082": {
+    "${REGISTRY_DOMAIN}": {
       "Handlers": {
         "/": {
-          "Proxy": "http://localhost:8082"
+          "Proxy": "http://host.docker.internal:8082"
         }
       }
     },
-    "${REGISTRY_DOMAIN}:5003": {
+    "${REGISTRY_DOMAIN}/v2/": {
       "Handlers": {
         "/": {
-          "Proxy": "https://localhost:5003",
-          "InsecureSkipVerify": true,
-          "ProxySetHeaders": {
-            "Access-Control-Allow-Origin": "https://${REGISTRY_DOMAIN}:8082",
-            "Access-Control-Allow-Methods": "HEAD, GET, OPTIONS, DELETE",
-            "Access-Control-Allow-Headers": "Authorization, Accept, Origin",
-            "Access-Control-Allow-Credentials": "true"
-          }
+          "Proxy": "https://host.docker.internal:5003/v2/",
+          "InsecureSkipVerify": true
         }
       }
     }
   },
   "AllowFunnel": {
-    "${REGISTRY_DOMAIN}:8082": true,
-    "${REGISTRY_DOMAIN}:5003": true
+    "${REGISTRY_DOMAIN}": true
   }
 }
 EOF
@@ -178,10 +163,9 @@ if [ $? -eq 0 ]; then
     echo "1. Your services are exposed via Tailscale Funnel."
     echo "   Check the Tailscale admin panel to see your node '${TS_HOSTNAME}'."
     echo "2. Access your services at:"
-    echo "   - Registry & UI: ${REGISTRY_DOMAIN}"
-    echo "   - UI Interface: ${REGISTRY_DOMAIN}:8082"
-    echo "   - Docker Registry: ${REGISTRY_DOMAIN}:5003"
-    echo "3. To login to the registry, run: docker login ${REGISTRY_DOMAIN}:5003"
+    echo "   - Registry UI: ${REGISTRY_DOMAIN}"
+    echo "   - Docker Registry API: ${REGISTRY_DOMAIN}/v2/"
+    echo "3. To login to the registry, run: docker login ${REGISTRY_DOMAIN}"
     echo ""
     echo -e "${RED}Authentication Credentials: Username=${REGISTRY_USER} (Please note it down)${NC}"
     echo "The same credentials will be used for Registry login and UI access."
