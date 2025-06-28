@@ -39,21 +39,20 @@ TS_EXTRA_ARGS=--advertise-tags=tag:container
 REGISTRY_DOMAIN=${registry_domain}
 REGISTRY_UI_DOMAIN=${registry_domain}
 REGISTRY_UI_TITLE=${registry_ui_title}
-REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=['true']
 REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt
 REGISTRY_HTTP_TLS_KEY=/certs/registry.key
 REGISTRY_HTTP_ADDR=0.0.0.0:5003
 EOL
 
     echo ".env file created successfully."
-    set -a
-    source ./.env # Load the newly created .env file
-    set +a
+    export REGISTRY_DOMAIN=${registry_domain}
 else
     echo ".env file already exists. Loading variables."
-    set -a
-    source ./.env # Load existing .env file
-    set +a
+    export REGISTRY_DOMAIN=$(grep '^REGISTRY_DOMAIN=' .env | cut -d '=' -f 2)
+    if [ -z "$REGISTRY_DOMAIN" ]; then
+        echo "Error: REGISTRY_DOMAIN not found or empty in .env file. Please remove .env and run again."
+        exit 1
+    fi
 fi
 
 # Load environment variables (Docker Compose handles this automatically)
