@@ -137,6 +137,7 @@ EOF
     docker cp "$CONTAINER_FULL_NAME":"/tmp/${REGISTRY_DOMAIN}.key" "$KEY_FILE"
 
     echo "Certificates generated and copied successfully."
+    start_containers
 else
     echo "Certificates already exist. Skipping generation."
 fi
@@ -145,6 +146,7 @@ fi
 
 start_containers() {
     echo "Starting Docker containers..."
+    mkdir -p ./registry/data ./registry/auth
     docker-compose up -d
     echo "Containers started."
     echo "--- Important Final Step ---"
