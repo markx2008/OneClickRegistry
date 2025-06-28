@@ -54,6 +54,10 @@ if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     echo "--- Certificate Setup ---"
     echo "TLS certificates not found. Generating them with Tailscale..."
 
+    # Create the certs directory if it doesn't exist
+    mkdir -p ./registry/certs
+
+
     echo "Starting Tailscale container..."
     docker-compose up -d tailscale
 
