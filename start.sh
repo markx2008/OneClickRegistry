@@ -62,6 +62,18 @@ if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     echo "Starting Tailscale container..."
     docker-compose up -d tailscale
 
+    # Add a small delay to allow the container to start or fail
+    sleep 5
+
+    # Check if the Tailscale container is running
+    if ! docker ps | grep -q ocr-tailscale; then
+        echo "Error: Tailscale container (ocr-tailscale) is not running."
+        echo "Checking Tailscale container logs for details:"
+        docker-compose logs ocr-tailscale
+        echo "Exiting script. Please check the logs above for the reason."
+        exit 1
+    fi
+
     echo "Waiting for Tailscale to connect..."
     until docker-compose exec ocr-tailscale tailscale status | grep -q "Logged in"; do
         echo "Tailscale not yet connected. Waiting..."
