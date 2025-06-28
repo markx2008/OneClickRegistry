@@ -8,15 +8,44 @@ command_exists() {
 start_containers() {
     echo "Starting Docker containers..."
     mkdir -p ./registry/data ./registry/auth
-    if [ ! -f "./registry/auth/htpasswd" ]; then
-        echo "htpasswd file not found. Creating an empty one..."
-        touch ./registry/auth/htpasswd
-    fi
     docker-compose up -d
     echo "Containers started."
     echo "--- Important Final Step ---"
     echo "To ensure your browser and Docker client trust the new certificate, please run the following command on your local machine (not in the container):"
     echo "tailscale cert --install"
+
+    echo "--- Registry Credentials Setup ---"
+    read -p "Enter a username for your registry: " registry_username
+    read -s -p "Enter a password for your registry (will not be displayed): " registry_password
+    echo
+
+    echo "Creating .env file..."
+    cat > .env << EOL
+# Tailscale Settings
+TS_AUTHKEY=${ts_authkey}?ephemeral=false
+TS_HOSTNAME=${ts_hostname}
+TS_EXTRA_ARGS=--advertise-tags=tag:container
+
+# Registry Settings
+REGISTRY_DOMAIN=${registry_domain}
+REGISTRY_UI_DOMAIN=${registry_domain}
+REGISTRY_UI_TITLE=${registry_ui_title}
+REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt
+REGISTRY_HTTP_TLS_KEY=/certs/registry.key
+REGISTRY_HTTP_ADDR=0.0.0.0:5003
+EOL
+
+    echo ".env file created successfully."
+    export REGISTRY_DOMAIN=${registry_domain}
+
+    echo "Creating htpasswd file..."
+    mkdir -p ./registry/auth
+    if echo "$htpasswd_line" > ./registry/auth/htpasswd; then
+        echo "htpasswd file created successfully."
+    else
+        echo "Error: Failed to create htpasswd file."
+        exit 1
+    fi
 }
 
 stop_containers() {
@@ -48,6 +77,9 @@ if [ ! -f .env ]; then
     read -p "Enter a hostname for your Tailscale container (e.g., my-registry) (TS_HOSTNAME): " ts_hostname
     read -p "Enter a title for the Registry UI (REGISTRY_UI_TITLE): " registry_ui_title
 
+    echo "--- Registry Credentials Setup ---"
+    read -p "Enter the full htpasswd line (e.g., user:\$apr1\$...): " htpasswd_line
+
     echo "Creating .env file..."
     cat > .env << EOL
 # Tailscale Settings
@@ -66,6 +98,15 @@ EOL
 
     echo ".env file created successfully."
     export REGISTRY_DOMAIN=${registry_domain}
+
+    echo "Creating htpasswd file..."
+    mkdir -p ./registry/auth
+    if echo "$htpasswd_line" > ./registry/auth/htpasswd; then
+        echo "htpasswd file created successfully."
+    else
+        echo "Error: Failed to create htpasswd file."
+        exit 1
+    fi
 else
     echo ".env file already exists. Loading variables."
     export REGISTRY_DOMAIN=$(grep '^REGISTRY_DOMAIN=' .env | cut -d '=' -f 2)
