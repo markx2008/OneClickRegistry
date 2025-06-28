@@ -21,7 +21,7 @@ if [ ! -f .env ]; then
     echo "--- Environment Setup ---"
     echo "The .env file was not found. Let's create it."
     
-    read -p "Enter your Tailscale Auth Key (TS_AUTHKEY): " ts_authkey
+    read -p "Enter your Tailscale OAuth Key (TS_AUTHKEY): " ts_authkey
     read -p "Enter the Tailscale domain suffix (e.g., your-name.ts.net): " ts_domain_suffix
     read -p "Enter the registry subdomain (e.g., registry): " registry_subdomain
     registry_domain="${registry_subdomain}.${ts_domain_suffix}"
@@ -31,7 +31,7 @@ if [ ! -f .env ]; then
     echo "Creating .env file..."
     cat > .env << EOL
 # Tailscale Settings
-TS_AUTHKEY=${ts_authkey}
+TS_AUTHKEY=${ts_authkey}?ephemeral=false
 TS_HOSTNAME=${ts_hostname}
 TS_EXTRA_ARGS=--advertise-tags=tag:container
 
