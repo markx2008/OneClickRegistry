@@ -54,8 +54,9 @@ if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     echo "--- Certificate Setup ---"
     echo "TLS certificates not found. Generating them with Tailscale..."
 
-    # Create the certs directory if it doesn't exist
+    # Create necessary directories if they don't exist
     mkdir -p ./registry/certs
+    mkdir -p ./tailscale/config
 
 
     echo "Starting Tailscale container..."
