@@ -47,9 +47,11 @@ EOL
 
     echo ".env file created successfully."
     source ./.env # Load the newly created .env file
+    export $(cat .env | sed 's/#.*//g' | xargs)
 else
     echo ".env file already exists. Loading variables."
     source ./.env # Load existing .env file
+    export $(cat .env | sed 's/#.*//g' | xargs)
 fi
 
 # Load environment variables (Docker Compose handles this automatically)
