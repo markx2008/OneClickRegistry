@@ -22,7 +22,9 @@ if [ ! -f .env ]; then
     echo "The .env file was not found. Let's create it."
     
     read -p "Enter your Tailscale Auth Key (TS_AUTHKEY): " ts_authkey
-    read -p "Enter your desired domain name (e.g., registry.your-name.ts.net) (REGISTRY_DOMAIN): " registry_domain
+    read -p "Enter the Tailscale domain suffix (e.g., your-name.ts.net): " ts_domain_suffix
+    read -p "Enter the registry subdomain (e.g., registry): " registry_subdomain
+    registry_domain="${registry_subdomain}.${ts_domain_suffix}"
     read -p "Enter a hostname for your Tailscale container (e.g., my-registry) (TS_HOSTNAME): " ts_hostname
     read -p "Enter a title for the Registry UI (REGISTRY_UI_TITLE): " registry_ui_title
 
