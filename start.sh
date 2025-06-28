@@ -39,7 +39,7 @@ TS_EXTRA_ARGS=--advertise-tags=tag:container
 REGISTRY_DOMAIN=${registry_domain}
 REGISTRY_UI_DOMAIN=${registry_domain}
 REGISTRY_UI_TITLE=${registry_ui_title}
-REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=['true']
+REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials="['true']"
 REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt
 REGISTRY_HTTP_TLS_KEY=/certs/registry.key
 REGISTRY_HTTP_ADDR=0.0.0.0:5003
