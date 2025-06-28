@@ -8,6 +8,10 @@ command_exists() {
 start_containers() {
     echo "Starting Docker containers..."
     mkdir -p ./registry/data ./registry/auth
+    if [ ! -f "./registry/auth/htpasswd" ]; then
+        echo "htpasswd file not found. Creating an empty one..."
+        touch ./registry/auth/htpasswd
+    fi
     docker-compose up -d
     echo "Containers started."
     echo "--- Important Final Step ---"
