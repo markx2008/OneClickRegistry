@@ -1,0 +1,6 @@
+http:
+  middlewares:
+    registry-auth:
+      basicAuth:
+        usersFile: "/auth/htpasswd"
+        removeHeader: true
