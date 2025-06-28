@@ -46,8 +46,10 @@ REGISTRY_HTTP_ADDR=0.0.0.0:5003
 EOL
 
     echo ".env file created successfully."
+    source ./.env # Load the newly created .env file
 else
     echo ".env file already exists. Loading variables."
+    source ./.env # Load existing .env file
 fi
 
 # Load environment variables (Docker Compose handles this automatically)
