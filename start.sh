@@ -58,6 +58,41 @@ if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     mkdir -p ./registry/certs
     mkdir -p ./tailscale/config
 
+    # Generate funnel.json for Tailscale Funnel
+    cat <<EOF > ./tailscale/config/funnel.json
+{
+  "TCP": {
+    "8082": {
+      "HTTPS": true
+    },
+    "5003": {
+      "HTTPS": true
+    }
+  },
+  "Web": {
+    "${REGISTRY_DOMAIN}:8082": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://localhost:8082"
+        }
+      }
+    },
+    "${REGISTRY_DOMAIN}:5003": {
+      "Handlers": {
+        "/": {
+          "Proxy": "https://localhost:5003",
+          "InsecureSkipVerify": true
+        }
+      }
+    }
+  },
+  "AllowFunnel": {
+    "${REGISTRY_DOMAIN}:8082": true,
+    "${REGISTRY_DOMAIN}:5003": true
+  }
+}
+EOF
+    echo "funnel.json created successfully."
 
     echo "Starting Tailscale container..."
     docker-compose up -d tailscale
