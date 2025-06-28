@@ -42,8 +42,7 @@ else
     echo ".env file already exists. Loading variables."
 fi
 
-# Load environment variables
-export $(grep -v '^#' .env | xargs)
+# Load environment variables (Docker Compose handles this automatically)
 
 # --- Certificate Generation ---
 CERT_FILE="./registry/certs/registry.crt"
@@ -52,20 +51,29 @@ KEY_FILE="./registry/certs/registry.key"
 if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     echo "--- Certificate Setup ---"
     echo "TLS certificates not found. Generating them with Tailscale..."
-    
+
+    echo "Starting Tailscale container..."
+    docker-compose up -d tailscale
+
+    echo "Waiting for Tailscale to connect..."
+    until docker-compose exec ocr-tailscale tailscale status | grep -q "Logged in"; do
+        echo "Tailscale not yet connected. Waiting..."
+        sleep 5
+    done
+    echo "Tailscale connected."
+
     # Ensure the user has enabled HTTPS certificates in Tailscale admin console
     echo "IMPORTANT: Please ensure you have enabled HTTPS certificates in your Tailscale admin console."
     read -p "Press [Enter] to continue once you have enabled HTTPS certificates..."
 
-    echo "Generating certificate for ${REGISTRY_DOMAIN}..."
-    tailscale cert "${REGISTRY_DOMAIN}"
+    echo "Generating certificate for ${REGISTRY_DOMAIN} inside the Tailscale container..."
+    docker-compose exec ocr-tailscale tailscale cert "${REGISTRY_DOMAIN}"
 
-    # Move the generated files to the correct location
-    echo "Moving certificates to ./registry/certs/"
-    mv "./${REGISTRY_DOMAIN}.crt" "$CERT_FILE"
-    mv "./${REGISTRY_DOMAIN}.key" "$KEY_FILE"
+    echo "Copying certificates from Tailscale container to ./registry/certs/"
+    docker cp ocr-tailscale:"/${REGISTRY_DOMAIN}.crt" "$CERT_FILE"
+    docker cp ocr-tailscale:"/${REGISTRY_DOMAIN}.key" "$KEY_FILE"
 
-    echo "Certificates generated successfully."
+    echo "Certificates generated and copied successfully."
 else
     echo "Certificates already exist. Skipping generation."
 fi
