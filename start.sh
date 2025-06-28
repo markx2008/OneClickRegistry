@@ -5,6 +5,22 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+start_containers() {
+    echo "Starting Docker containers..."
+    mkdir -p ./registry/data ./registry/auth
+    docker-compose up -d
+    echo "Containers started."
+    echo "--- Important Final Step ---"
+    echo "To ensure your browser and Docker client trust the new certificate, please run the following command on your local machine (not in the container):"
+    echo "tailscale cert --install"
+}
+
+stop_containers() {
+    echo "Stopping Docker containers..."
+    docker-compose down
+    echo "Containers stopped."
+}
+
 # --- Dependency Check ---
 echo "Checking for required tools: docker, docker-compose, tailscale..."
 
@@ -138,27 +154,12 @@ EOF
 
     echo "Certificates generated and copied successfully."
     start_containers
+    exit 0
 else
     echo "Certificates already exist. Skipping generation."
 fi
 
 # --- Docker Compose Operations ---
-
-start_containers() {
-    echo "Starting Docker containers..."
-    mkdir -p ./registry/data ./registry/auth
-    docker-compose up -d
-    echo "Containers started."
-    echo "--- Important Final Step ---"
-    echo "To ensure your browser and Docker client trust the new certificate, please run the following command on your local machine (not in the container):"
-    echo "tailscale cert --install"
-}
-
-stop_containers() {
-    echo "Stopping Docker containers..."
-    docker-compose down
-    echo "Containers stopped."
-}
 
 case "$1" in
     start)
