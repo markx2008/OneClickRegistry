@@ -103,9 +103,6 @@ EOF
     echo "Starting Tailscale container..."
     docker-compose up -d tailscale
 
-    # Add a longer delay to allow the container to fully initialize
-    sleep 20
-
     # Wait until the Tailscale container is actually running
     echo "Waiting for ocr-tailscale container to be in running state..."
     until [ "$(docker inspect -f '{{.State.Running}}' ocr-tailscale 2>/dev/null)" = "true" ]; do
@@ -114,32 +111,25 @@ EOF
     done
     echo "ocr-tailscale container is running."
 
-    # Check if the Tailscale container is running (redundant but harmless after the above check)
-    if ! docker ps | grep -q ocr-tailscale; then
-        echo "Error: Tailscale container (ocr-tailscale) is not listed by docker ps."
-        echo "Checking Tailscale container logs for details:"
-        docker-compose logs ocr-tailscale
-        echo "Exiting script. Please check the logs above for the reason."
-        exit 1
-    fi
-
-    echo "Waiting for Tailscale to connect..."
-    until docker-compose exec ocr-tailscale tailscale status | grep -q "Logged in"; do
-        echo "Tailscale not yet connected. Waiting..."
-        sleep 5
-    done
-    echo "Tailscale connected."
+    # Give Tailscale service inside the container time to connect and initialize
+    echo "Giving Tailscale service time to connect to Tailnet..."
+    sleep 30 # Increased sleep duration
 
     # Ensure the user has enabled HTTPS certificates in Tailscale admin console
     echo "IMPORTANT: Please ensure you have enabled HTTPS certificates in your Tailscale admin console."
     read -p "Press [Enter] to continue once you have enabled HTTPS certificates..."
 
     echo "Generating certificate for ${REGISTRY_DOMAIN} inside the Tailscale container..."
-    docker-compose exec ocr-tailscale tailscale cert "${REGISTRY_DOMAIN}"
+    CONTAINER_FULL_NAME=$(docker ps --filter "name=ocr-tailscale" --format "{{.Names}}")
+    if [ -z "$CONTAINER_FULL_NAME" ]; then
+        echo "Error: Could not find running ocr-tailscale container to generate certificate."
+        exit 1
+    fi
+    docker exec "$CONTAINER_FULL_NAME" tailscale cert "${REGISTRY_DOMAIN}"
 
     echo "Copying certificates from Tailscale container to ./registry/certs/"
-    docker cp ocr-tailscale:"/${REGISTRY_DOMAIN}.crt" "$CERT_FILE"
-    docker cp ocr-tailscale:"/${REGISTRY_DOMAIN}.key" "$KEY_FILE"
+    docker cp "$CONTAINER_FULL_NAME":"/${REGISTRY_DOMAIN}.crt" "$CERT_FILE"
+    docker cp "$CONTAINER_FULL_NAME":"/${REGISTRY_DOMAIN}.key" "$KEY_FILE"
 
     echo "Certificates generated and copied successfully."
 else
