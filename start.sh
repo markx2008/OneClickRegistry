@@ -125,11 +125,11 @@ EOF
         echo "Error: Could not find running ocr-tailscale container to generate certificate."
         exit 1
     fi
-    docker exec "$CONTAINER_FULL_NAME" tailscale cert "${REGISTRY_DOMAIN}"
+    docker exec "$CONTAINER_FULL_NAME" sh -c "cd /tmp && tailscale cert \"${REGISTRY_DOMAIN}\""
 
     echo "Copying certificates from Tailscale container to ./registry/certs/"
-    docker cp "$CONTAINER_FULL_NAME":"/${REGISTRY_DOMAIN}.crt" "$CERT_FILE"
-    docker cp "$CONTAINER_FULL_NAME":"/${REGISTRY_DOMAIN}.key" "$KEY_FILE"
+    docker cp "$CONTAINER_FULL_NAME":"/tmp/${REGISTRY_DOMAIN}.crt" "$CERT_FILE"
+    docker cp "$CONTAINER_FULL_NAME":"/tmp/${REGISTRY_DOMAIN}.key" "$KEY_FILE"
 
     echo "Certificates generated and copied successfully."
 else
