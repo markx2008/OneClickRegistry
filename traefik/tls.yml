@@ -1,5 +1,0 @@
-# traefik/tls.yml
-tls:
-  certificates:
-    - certFile: /certs/registry.crt
-      keyFile: /certs/registry.key 

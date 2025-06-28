@@ -131,13 +131,7 @@ cat <<EOF > ./tailscale/config/funnel.json
       "Handlers": {
         "/": {
           "Proxy": "https://localhost:5003",
-          "InsecureSkipVerify": true,
-          "ProxySetHeaders": {
-            "Access-Control-Allow-Origin": "https://${REGISTRY_DOMAIN}:8082",
-            "Access-Control-Allow-Methods": "HEAD, GET, OPTIONS, DELETE",
-            "Access-Control-Allow-Headers": "Authorization, Accept, Origin",
-            "Access-Control-Allow-Credentials": "true"
-          }
+          "InsecureSkipVerify": true
         }
       }
     }
