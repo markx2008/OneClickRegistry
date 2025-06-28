@@ -13,39 +13,6 @@ start_containers() {
     echo "--- Important Final Step ---"
     echo "To ensure your browser and Docker client trust the new certificate, please run the following command on your local machine (not in the container):"
     echo "tailscale cert --install"
-
-    echo "--- Registry Credentials Setup ---"
-    read -p "Enter a username for your registry: " registry_username
-    read -s -p "Enter a password for your registry (will not be displayed): " registry_password
-    echo
-
-    echo "Creating .env file..."
-    cat > .env << EOL
-# Tailscale Settings
-TS_AUTHKEY=${ts_authkey}?ephemeral=false
-TS_HOSTNAME=${ts_hostname}
-TS_EXTRA_ARGS=--advertise-tags=tag:container
-
-# Registry Settings
-REGISTRY_DOMAIN=${registry_domain}
-REGISTRY_UI_DOMAIN=${registry_domain}
-REGISTRY_UI_TITLE=${registry_ui_title}
-REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt
-REGISTRY_HTTP_TLS_KEY=/certs/registry.key
-REGISTRY_HTTP_ADDR=0.0.0.0:5003
-EOL
-
-    echo ".env file created successfully."
-    export REGISTRY_DOMAIN=${registry_domain}
-
-    echo "Creating htpasswd file..."
-    mkdir -p ./registry/auth
-    if echo "$htpasswd_line" > ./registry/auth/htpasswd; then
-        echo "htpasswd file created successfully."
-    else
-        echo "Error: Failed to create htpasswd file."
-        exit 1
-    fi
 }
 
 stop_containers() {
@@ -115,8 +82,6 @@ else
         exit 1
     fi
 fi
-
-# Load environment variables (Docker Compose handles this automatically)
 
 # --- Certificate Generation ---
 CERT_FILE="./registry/certs/registry.crt"
