@@ -19,7 +19,7 @@ services:
       - "--entrypoints.registryui.address=:8082"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/dynamic:/etc/traefik/dynamic:ro # Changed to dynamic
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
       - ./registry/certs:/certs:ro
 
   registry:
@@ -93,6 +93,7 @@ services:
     volumes:
       - ts-state:/var/lib/tailscale
       - ./tailscale/config:/config
+      - ./registry/certs:/certs
     devices:
       - /dev/net/tun:/dev/net/tun
     cap_add:
