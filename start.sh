@@ -103,12 +103,20 @@ EOF
     echo "Starting Tailscale container..."
     docker-compose up -d tailscale
 
-    # Add a small delay to allow the container to start or fail
-    sleep 5
+    # Add a longer delay to allow the container to fully initialize
+    sleep 20
 
-    # Check if the Tailscale container is running
+    # Wait until the Tailscale container is actually running
+    echo "Waiting for ocr-tailscale container to be in running state..."
+    until [ "$(docker inspect -f '{{.State.Running}}' ocr-tailscale 2>/dev/null)" = "true" ]; do
+        echo "ocr-tailscale not yet running. Waiting..."
+        sleep 5
+    done
+    echo "ocr-tailscale container is running."
+
+    # Check if the Tailscale container is running (redundant but harmless after the above check)
     if ! docker ps | grep -q ocr-tailscale; then
-        echo "Error: Tailscale container (ocr-tailscale) is not running."
+        echo "Error: Tailscale container (ocr-tailscale) is not listed by docker ps."
         echo "Checking Tailscale container logs for details:"
         docker-compose logs ocr-tailscale
         echo "Exiting script. Please check the logs above for the reason."
