@@ -110,7 +110,8 @@ if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     "${REGISTRY_DOMAIN}:8082": {
       "Handlers": {
         "/": {
-          "Proxy": "http://localhost:8082"
+          "Proxy": "https://localhost:8082",
+          "InsecureSkipVerify": true
         }
       }
     },
