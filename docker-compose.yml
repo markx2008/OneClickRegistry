@@ -52,8 +52,7 @@ services:
       - "traefik.http.routers.registry.entrypoints=registry"
       - "traefik.http.routers.registry.tls=true"
       - "traefik.http.routers.registry.service=registry-service"
-      - "traefik.http.services.registry-service.loadbalancer.server.port=5000"
-      - "traefik.http.services.registry-service.loadbalancer.server.scheme=https"
+      - "traefik.http.services.registry-service.loadbalancer.server.url=https://localhost:5000"
       - "traefik.http.services.registry-service.loadbalancer.serverstransport=insecureskipverify@file"
 
   registry-ui:
@@ -76,7 +75,7 @@ services:
       - "traefik.http.routers.registry-ui.entrypoints=registryui"
       - "traefik.http.routers.registry-ui.tls=true"
       - "traefik.http.routers.registry-ui.service=registry-ui-service"
-      - "traefik.http.services.registry-ui-service.loadbalancer.server.port=80"
+      - "traefik.http.services.registry-ui-service.loadbalancer.server.url=http://localhost:80"
 
   tailscale:
     image: tailscale/tailscale:latest
