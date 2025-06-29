@@ -17,6 +17,7 @@ services:
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--entrypoints.registry.address=:5003"
       - "--entrypoints.registryui.address=:8082"
+      - "--accesslog=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/dynamic:/etc/traefik/dynamic:ro
@@ -45,15 +46,6 @@ services:
       - ./registry/data:/data
       - ./registry/auth:/auth:ro
       - ./registry/certs:/certs:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=service:tailscale"
-      - "traefik.http.routers.registry.rule=Host(`${REGISTRY_DOMAIN}`)"
-      - "traefik.http.routers.registry.entrypoints=registry"
-      - "traefik.http.routers.registry.tls=true"
-      - "traefik.http.routers.registry.service=registry-service"
-      - "traefik.http.services.registry-service.loadbalancer.server.url=https://localhost:5000"
-      - "traefik.http.services.registry-service.loadbalancer.serverstransport=insecureskipverify@file"
 
   registry-ui:
     image: joxit/docker-registry-ui:main
@@ -68,14 +60,6 @@ services:
       - DELETE_IMAGES=true
       - NGINX_LISTEN_PORT=80
       - SINGLE_REGISTRY=true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=service:tailscale"
-      - "traefik.http.routers.registry-ui.rule=Host(`${REGISTRY_DOMAIN}`)"
-      - "traefik.http.routers.registry-ui.entrypoints=registryui"
-      - "traefik.http.routers.registry-ui.tls=true"
-      - "traefik.http.routers.registry-ui.service=registry-ui-service"
-      - "traefik.http.services.registry-ui-service.loadbalancer.server.url=http://localhost:80"
 
   tailscale:
     image: tailscale/tailscale:latest

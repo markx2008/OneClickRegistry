@@ -83,6 +83,39 @@ else
     fi
 fi
 
+echo "Generating Traefik dynamic config..."
+mkdir -p ./traefik/dynamic
+cat > ./traefik/dynamic/config.yml << EOL
+http:
+  routers:
+    registry-router:
+      rule: "Host(\`${REGISTRY_DOMAIN}\`)"
+      entryPoints:
+        - registry
+      service: registry-service
+      tls: {}
+
+    registry-ui-router:
+      rule: "Host(\`${REGISTRY_DOMAIN}\`)"
+      entryPoints:
+        - registryui
+      service: registry-ui-service
+      tls: {}
+
+  services:
+    registry-service:
+      loadBalancer:
+        servers:
+          - url: "https://localhost:5000"
+        serversTransport: insecureskipverify@file
+
+    registry-ui-service:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:80"
+EOL
+echo "Traefik dynamic config created successfully."
+
 # --- Certificate Generation ---
 CERT_FILE="./registry/certs/registry.crt"
 KEY_FILE="./registry/certs/registry.key"
