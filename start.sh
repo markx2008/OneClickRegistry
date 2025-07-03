@@ -230,8 +230,8 @@ if [ -n "$funnel_status" ]; then
     tailscale funnel reset
 fi
 
-# 使用TLS-terminated TCP forwarding並使用--bg選項讓它在後台運行
-if tailscale funnel --tls-terminated-tcp ${FUNNEL_PORT} tcp://localhost:${HTTPS_PORT} --bg; then
+# 使用TLS-terminated TCP forwarding
+if tailscale funnel --tls-terminated-tcp ${FUNNEL_PORT} tcp://localhost:${HTTPS_PORT}; then
     echo "Tailscale Funnel with TLS-terminated TCP forwarding enabled successfully."
 else
     echo "Error: Failed to enable Tailscale Funnel with TCP forwarding."
