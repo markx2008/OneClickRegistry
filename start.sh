@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Default to 'start' if no command is provided
+COMMAND=${1:-start}
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -221,26 +224,50 @@ if check_port "$HTTP_PORT"; then
 fi
 
 # --- Tailscale Funnel Setup ---
-echo "Enabling Tailscale Funnels for both HTTP/HTTPS and TCP on port ${FUNNEL_PORT}..."
+echo "啟用 Tailscale Funnel - 使用不同端口分別處理網頁服務和 Docker Registry 服務..."
 
 # 檢查是否已有funnel運行
 funnel_status=$(tailscale funnel status 2>/dev/null)
 if [ -n "$funnel_status" ]; then
-    echo "Resetting existing Tailscale Funnel..."
+    echo "重置現有的 Tailscale Funnel 設定..."
     tailscale funnel reset
 fi
 
-# 先設定 HTTP/HTTPS Funnel (網頁服務)
-echo "Setting up HTTP/HTTPS Funnel on port ${FUNNEL_PORT}..."
-tailscale funnel --bg --https=${FUNNEL_PORT} ${HTTP_PORT}
+# 設定內部HTTP端口，從.env文件讀取或使用默認值
+INTERNAL_HTTP_PORT=$(grep -E "^INTERNAL_HTTP_PORT=" .env 2>/dev/null | cut -d= -f2)
+INTERNAL_HTTP_PORT=${INTERNAL_HTTP_PORT:-8088}
+echo "使用內部 HTTP 端口: ${INTERNAL_HTTP_PORT}"
 
-# 接著設定 TLS-terminated TCP Funnel (Docker Registry)
-echo "Setting up TLS-terminated TCP Funnel on port ${FUNNEL_PORT}..."
-if tailscale funnel --bg --tls-terminated-tcp ${FUNNEL_PORT} tcp://localhost:${HTTPS_PORT}; then
-    echo "Tailscale Funnels enabled successfully."
+# 確保 FUNNEL_PORT 和 HTTPS_PORT 在支持的端口範圍內 (443, 8443, 或 10000)
+for PORT_VAR in FUNNEL_PORT HTTPS_PORT; do
+    PORT_VALUE=$(eval echo \$$PORT_VAR)
+    if [ "$PORT_VALUE" != "443" ] && [ "$PORT_VALUE" != "8443" ] && [ "$PORT_VALUE" != "10000" ]; then
+        echo "警告: $PORT_VAR ($PORT_VALUE) 不是 Tailscale Funnel 支持的端口。"
+        echo "Tailscale Funnel 只支持端口 443, 8443, 或 10000。"
+        echo "使用預設端口 443。"
+        eval "$PORT_VAR=443"
+    fi
+done
+
+# 設定 HTTP/HTTPS Funnel (網頁服務)
+echo "設定 HTTP/HTTPS Funnel (網頁服務) - 使用 $FUNNEL_PORT 端口..."
+if tailscale funnel --https=$FUNNEL_PORT ${INTERNAL_HTTP_PORT}; then
+    echo "網頁服務 Funnel 設定成功: https://${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
 else
-    echo "Error: Failed to enable Tailscale Funnels."
-    echo "Please check your Tailscale ACLs to ensure 'funnel' is allowed for this user."
+    echo "錯誤: 網頁服務 Funnel 設定失敗。"
+    echo "請檢查您的 Tailscale ACLs 設定，確保已授權 'funnel' 功能。"
+    exit 1
+fi
+
+# 設定 TLS-terminated TCP Funnel (Docker Registry)
+echo "設定 TLS-terminated TCP Funnel (Docker Registry) - 使用 $HTTPS_PORT 端口..."
+if tailscale funnel --tls-terminated-tcp $HTTPS_PORT tcp://localhost:${HTTPS_PORT}; then
+    echo "Docker Registry Funnel 設定成功!"
+    echo "Docker Registry 可通過 ${REGISTRY_DOMAIN}:${HTTPS_PORT} 存取"
+    echo "Docker 登入指令: docker login ${REGISTRY_DOMAIN}:${HTTPS_PORT}"
+else
+    echo "錯誤: Docker Registry Funnel 設定失敗。"
+    echo "請檢查您的 Tailscale ACLs 設定，確保已授權 'funnel' 功能。"
     exit 1
 fi
 
@@ -285,16 +312,13 @@ fi
 
 # --- Docker Compose Operations ---
 
-# Default to 'start' if no command is provided
-COMMAND=${1:-start}
-
 case "$COMMAND" in
     start)
         start_containers
         echo "======================================"
         echo "Registry successfully started!"
         echo "Access URL: https://${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
-        echo "Docker login command: docker login ${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
+        echo "Docker login command: docker login ${REGISTRY_DOMAIN}:${HTTPS_PORT}"
         echo "Traefik dashboard: http://localhost:${DASHBOARD_PORT}"
         echo "======================================"
         ;;
@@ -307,7 +331,7 @@ case "$COMMAND" in
         echo "======================================"
         echo "Registry successfully restarted!"
         echo "Access URL: https://${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
-        echo "Docker login command: docker login ${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
+        echo "Docker login command: docker login ${REGISTRY_DOMAIN}:${HTTPS_PORT}"
         echo "Traefik dashboard: http://localhost:${DASHBOARD_PORT}"
         echo "======================================"
         ;;
