@@ -221,7 +221,7 @@ if check_port "$HTTP_PORT"; then
 fi
 
 # --- Tailscale Funnel Setup ---
-echo "Enabling Tailscale Funnel with TLS-terminated TCP forwarding on port ${FUNNEL_PORT}..."
+echo "Enabling Tailscale Funnels for both HTTP/HTTPS and TCP on port ${FUNNEL_PORT}..."
 
 # 檢查是否已有funnel運行
 funnel_status=$(tailscale funnel status 2>/dev/null)
@@ -230,11 +230,16 @@ if [ -n "$funnel_status" ]; then
     tailscale funnel reset
 fi
 
-# 使用TLS-terminated TCP forwarding
-if tailscale funnel --tls-terminated-tcp ${FUNNEL_PORT} tcp://localhost:${HTTPS_PORT}; then
-    echo "Tailscale Funnel with TLS-terminated TCP forwarding enabled successfully."
+# 先設定 HTTP/HTTPS Funnel (網頁服務)
+echo "Setting up HTTP/HTTPS Funnel on port ${FUNNEL_PORT}..."
+tailscale funnel --bg --https=${FUNNEL_PORT} ${HTTP_PORT}
+
+# 接著設定 TLS-terminated TCP Funnel (Docker Registry)
+echo "Setting up TLS-terminated TCP Funnel on port ${FUNNEL_PORT}..."
+if tailscale funnel --bg --tls-terminated-tcp ${FUNNEL_PORT} tcp://localhost:${HTTPS_PORT}; then
+    echo "Tailscale Funnels enabled successfully."
 else
-    echo "Error: Failed to enable Tailscale Funnel with TCP forwarding."
+    echo "Error: Failed to enable Tailscale Funnels."
     echo "Please check your Tailscale ACLs to ensure 'funnel' is allowed for this user."
     exit 1
 fi
