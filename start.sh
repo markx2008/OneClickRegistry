@@ -53,9 +53,9 @@ elif [ ! -f .env ]; then
     echo -n "Enter a title for the Registry UI (REGISTRY_UI_TITLE): "
     read registry_ui_title
 
-    # 確保HTTPS端口是有效的數字
+    # 確保HTTPS端口是Tailscale Funnel支持的端口
     while true; do
-        echo -n "Enter HTTPS port for Registry (default: 443): "
+        echo -n "Enter HTTPS port for Registry (443, 8443, or 10000; default: 443): "
         read https_port
         
         # 如果為空，使用默認值
@@ -64,16 +64,11 @@ elif [ ! -f .env ]; then
             break
         fi
         
-        # 檢查是否為數字
-        if echo "$https_port" | grep -q "^[0-9]\+$"; then
-            # 檢查端口範圍
-            if [ "$https_port" -ge 1 ] && [ "$https_port" -le 65535 ]; then
-                break
-            else
-                echo "Error: Port must be between 1 and 65535. Please try again."
-            fi
+        # 檢查是否為允許的端口
+        if [ "$https_port" = "443" ] || [ "$https_port" = "8443" ] || [ "$https_port" = "10000" ]; then
+            break
         else
-            echo "Error: Please enter a valid number for the port."
+            echo "Error: Tailscale Funnel only supports ports 443, 8443, or 10000. Please choose one of these ports."
         fi
     done
     
@@ -161,6 +156,16 @@ else
     export DASHBOARD_PORT
     export FUNNEL_PORT
     export HTTP_PORT
+    
+    # 確保FUNNEL_PORT是有效的Tailscale Funnel端口
+    if [ "$FUNNEL_PORT" != "443" ] && [ "$FUNNEL_PORT" != "8443" ] && [ "$FUNNEL_PORT" != "10000" ]; then
+        echo "Warning: Stored FUNNEL_PORT ($FUNNEL_PORT) is not supported by Tailscale Funnel."
+        echo "Tailscale Funnel only supports ports 443, 8443, or 10000."
+        echo "Setting to default port 443."
+        FUNNEL_PORT=443
+        # 更新.env文件中的FUNNEL_PORT
+        sed -i "s/^FUNNEL_PORT=.*/FUNNEL_PORT=443/" .env
+    fi
 fi
 
 # --- 檢查端口是否已被占用 ---
