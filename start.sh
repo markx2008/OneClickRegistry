@@ -239,6 +239,16 @@ else
     exit 1
 fi
 
+# 添加Tailscale TCP轉發，用於外網訪問
+echo "Setting up Tailscale TCP forwarding on port 10000..."
+if tailscale funnel --tcp 10000 tcp://localhost:${TRAEFIK_HTTPS_PORT}; then
+    echo "Tailscale TCP forwarding enabled successfully."
+else
+    echo "Error: Failed to enable Tailscale TCP forwarding."
+    echo "Please check your Tailscale ACLs to ensure 'funnel' is allowed for this user."
+    exit 1
+fi
+
 # --- Traefik TLS Config ---
 echo "Generating Traefik TLS config..."
 mkdir -p ./traefik/dynamic
@@ -289,7 +299,9 @@ case "$COMMAND" in
         echo "======================================"
         echo "Registry successfully started!"
         echo "Access URL: https://${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
+        echo "External access URL: tcp://${REGISTRY_DOMAIN}:10000"
         echo "Docker login command: docker login ${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
+        echo "External Docker login: docker login ${REGISTRY_DOMAIN}:10000"
         echo "Traefik dashboard: http://localhost:${DASHBOARD_PORT}"
         echo "======================================"
         ;;
@@ -302,7 +314,9 @@ case "$COMMAND" in
         echo "======================================"
         echo "Registry successfully restarted!"
         echo "Access URL: https://${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
+        echo "External access URL: tcp://${REGISTRY_DOMAIN}:10000"
         echo "Docker login command: docker login ${REGISTRY_DOMAIN}:${FUNNEL_PORT}"
+        echo "External Docker login: docker login ${REGISTRY_DOMAIN}:10000"
         echo "Traefik dashboard: http://localhost:${DASHBOARD_PORT}"
         echo "======================================"
         ;;
