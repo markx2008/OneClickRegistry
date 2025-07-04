@@ -241,7 +241,7 @@ fi
 
 # 添加Tailscale TCP轉發，用於外網訪問
 echo "Setting up Tailscale TCP forwarding on port 10000..."
-if tailscale funnel --tcp 10000 tcp://localhost:${TRAEFIK_HTTPS_PORT}; then
+if tailscale funnel --bg --tcp 10000 tcp://localhost:${TRAEFIK_HTTPS_PORT}; then
     echo "Tailscale TCP forwarding enabled successfully."
 else
     echo "Error: Failed to enable Tailscale TCP forwarding."
