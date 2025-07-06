@@ -69,6 +69,9 @@ services:
       # Auth Middleware
       - "traefik.http.middlewares.registry-auth.basicauth.usersfile=/auth/htpasswd"
       - "traefik.http.middlewares.registry-auth.basicauth.realm=Registry Realm"
+      # --- [新增] 解決上傳逾時問題 ---
+      - "traefik.http.services.registry-api.loadbalancer.server.forwardingTimeouts.idleTimeout=10m"
+      - "traefik.http.services.registry-api.loadbalancer.server.forwardingTimeouts.responseHeaderTimeout=10m"
 
   registry-ui:
     image: joxit/docker-registry-ui:main
